@@ -1,0 +1,289 @@
+Day,Month,Year,Holiday,Event
+1,1,2024,0,New Year's Day
+13,1,2024,1,Lohri/Weekend
+14,1,2024,1,Makar Sankranti/Weekend
+15,1,2024,0,Pongal
+17,1,2024,0,Guru Govind Singh Jayanti
+26,1,2024,1,Republic Day
+14,2,2024,0,Vasant Panchami
+19,2,2024,0,Shivaji Jayanti
+24,2,2024,1,Guru Ravidas Jayanti/Weekend
+6,3,2024,0,Maharishi Dayanand Saraswati Jayanti
+8,3,2024,0,Shivaratri
+24,3,2024,1,Holika Dahana/Weekend
+25,3,2024,1,Holi
+25,3,2024,1,Dolyatra
+29,3,2024,1,Good Friday
+31,3,2024,1,Easter Day/Weekend
+5,4,2024,0,Jamat Ul-Vida
+9,4,2024,0,Chaitra Sukhladi
+9,4,2024,0,Ugadi
+9,4,2024,0,Gudi Padwa
+11,4,2024,1,Ramzan Id/Eid-ul-Fitar
+13,4,2024,1,Vaisakhi/Weekend
+14,4,2024,1,Mesadi/Vaisakhadi/Weekend
+14,4,2024,1,Ambedkar Jayanti/Weekend
+17,4,2024,1,Rama Navami
+21,4,2024,1,Mahavir Jayanti/Weekend
+8,5,2024,0,Birthday of Rabindranath
+23,5,2024,1,Buddha Purnima/Vesak
+17,6,2024,1,Bakrid/Eid-ul-Adha
+7,7,2024,1,Rath Yatra/Weekend
+17,7,2024,1,Muharram/Ashura
+15,8,2024,1,Independence Day
+15,8,2024,1,Parsi New Year
+19,8,2024,0,Raksha Bandhan (Rakhi)
+26,8,2024,1,Janmashtami
+26,8,2024,1,Janmashtami (Smarta)
+7,9,2024,1,Ganesh Chaturthi/Vinayaka Chaturthi/Weekend
+15,9,2024,1,Onam/Weekend
+16,9,2024,1,Milad un-Nabi/Id-e-Milad
+2,10,2024,1,Mahatma Gandhi Jayanti
+3,10,2024,0,First Day of Sharad Navratri
+9,10,2024,0,First Day of Durga Puja Festivities
+10,10,2024,0,Maha Saptami
+11,10,2024,0,Maha Navami
+11,10,2024,0,Maha Ashtami
+12,10,2024,1,Dussehra/Weekend
+17,10,2024,1,Maharishi Valmiki Jayanti
+20,10,2024,1,Karaka Chaturthi (Karva Chauth)/Weekend
+31,10,2024,1,Naraka Chaturdasi
+31,10,2024,1,Diwali/Deepavali
+2,11,2024,1,Govardhan Puja/Weekend
+3,11,2024,1,Bhai Duj/Weekend
+7,11,2024,0,Chhat Puja (Pratihar Sashthi/Surya Sashthi)
+15,11,2024,1,Guru Nanak Jayanti
+24,11,2024,1,Guru Tegh Bahadur's Martyrdom Day/Weekend
+24,12,2024,0,Christmas Eve
+25,12,2024,1,Christmas
+1,1,2025,0,New Year's Day
+6,1,2025,0,Guru Govind Singh Jayanti
+14,1,2025,0,Makar Sankranti
+14,1,2025,0,Pongal
+26,1,2025,1,Republic Day/Weekend
+2,2,2025,1,Vasant Panchami/Weekend
+12,2,2025,0,Guru Ravidas Jayanti
+23,2,2025,1,Maharishi Dayanand Saraswati Jayanti/Weekend
+26,2,2025,0,Maha Shivaratri/Shivaratri
+13,3,2025,0,Holika Dahana
+14,3,2025,1,Holi
+14,3,2025,1,Dolyatra
+28,3,2025,0,Jamat Ul-Vida
+30,3,2025,1,Chaitra Sukhladi/Weekend
+30,3,2025,1,Ugadi/Weekend
+30,3,2025,1,Gudi Padwa/Weekend
+31,3,2025,1,Ramzan Id/Eid-ul-Fitr
+6,4,2025,1,Ram Navami/Weekend
+10,4,2025,1,Mahavir Jayanti
+13,4,2025,1,Vaisakhi/Weekend
+14,4,2025,0,Mesadi
+14,4,2025,0,Ambedkar Jayanti
+15,4,2025,0,Bahag Bihu/Vaisakhadi
+18,4,2025,1,Good Friday
+20,4,2025,1,Easter Day/Weekend
+9,5,2025,0,Birthday of Rabindranath
+12,5,2025,1,Buddha Purnima/Vesak
+7,6,2025,1,Bakrid/Eid-ul-Adha/Weekend
+27,6,2025,0,Rath Yatra
+6,7,2025,1,Muharram/Ashura/Weekend
+9,8,2025,1,Raksha Bandhan (Rakhi)/Weekend
+15,8,2025,1,Independence Day
+15,8,2025,1,Janmashtami (Smarta)
+15,8,2025,1,Parsi New Year
+16,8,2025,1,Janmashtami/Weekend
+27,8,2025,0,Ganesh Chaturthi/Vinayaka Chaturthi
+5,9,2025,1,Milad un-Nabi/Id-e-Milad
+5,9,2025,1,Onam
+22,9,2025,0,First Day of Sharad Navratri
+28,9,2025,1,First Day of Durga Puja Festivities/Weekend
+29,9,2025,0,Maha Saptami
+30,9,2025,0,Maha Ashtami
+1,10,2025,0,Maha Navami
+2,10,2025,1,Mahatma Gandhi Jayanti
+2,10,2025,1,Dussehra
+7,10,2025,1,Maharishi Valmiki Jayanti
+10,10,2025,0,Karaka Chaturthi (Karva Chauth)
+20,10,2025,1,Naraka Chaturdasi
+20,10,2025,1,Diwali/Deepavali
+22,10,2025,0,Govardhan Puja
+23,10,2025,0,Bhai Duj
+28,10,2025,0,Chhat Puja (Pratihar Sashthi/Surya Sashthi)
+5,11,2025,1,Guru Nanak Jayanti
+24,11,2025,0,Guru Tegh Bahadur's Martyrdom Day
+24,12,2025,0,Christmas Eve
+25,12,2025,1,Christmas
+1,1,2026,0,New Year's Day
+14,1,2026,0,Makar Sankranti
+14,1,2026,0,Pongal
+23,1,2026,0,Vasant Panchami
+26,1,2026,1,Republic Day
+15,2,2026,1,Maha Shivaratri/Shivaratri/Weekend
+19,2,2026,0,Shivaji Jayanti
+4,3,2026,1,Holi
+19,3,2026,0,Ugadi
+19,3,2026,0,Gudi Padwa
+21,3,2026,1,Ramzan Id/Eid-ul-Fitar/Weekend
+26,3,2026,1,Rama Navami
+3,4,2026,1,Good Friday
+5,4,2026,1,Easter Day/Weekend
+14,4,2026,0,Ambedkar Jayanti
+28,5,2026,1,Bakrid/Eid-ul-Adha
+26,6,2026,1,Muharram/Ashura
+16,7,2026,0,Rath Yatra
+15,8,2026,1,Independence Day/Weekend
+26,8,2026,0,Onam
+28,8,2026,0,Raksha Bandhan (Rakhi)
+4,9,2026,1,Janmashtami
+4,9,2026,1,Janmashtami (Smarta)
+14,9,2026,0,Ganesh Chaturthi/Vinayaka Chaturthi
+2,10,2026,1,Mahatma Gandhi Jayanti
+11,10,2026,1,First Day of Sharad Navratri/Weekend
+17,10,2026,1,First Day of Durga Puja Festivities/Weekend
+20,10,2026,1,Dussehra
+29,10,2026,0,Karaka Chaturthi (Karva Chauth)
+8,11,2026,1,Diwali/Deepavali/Weekend
+11,11,2026,0,Bhai Duj
+15,11,2026,1,Chhat Puja (Pratihar Sashthi/Surya Sashthi)/Weekend
+24,11,2026,0,Guru Tegh Bahadur's Martyrdom Day
+24,12,2026,0,Christmas Eve
+25,12,2026,1,Christmas
+1,1,2027,0,New Year's Day
+15,1,2027,0,Makar Sankranti
+15,1,2027,0,Pongal
+26,1,2027,1,Republic Day
+11,2,2027,0,Vasant Panchami
+19,2,2027,0,Shivaji Jayanti
+6,3,2027,1,Maha Shivaratri/Shivaratri/Weekend
+10,3,2027,1,Ramzan Id/Eid-ul-Fitar
+22,3,2027,1,Holi
+26,3,2027,1,Good Friday
+28,3,2027,1,Easter Day/Weekend
+7,4,2027,0,Ugadi
+7,4,2027,0,Gudi Padwa
+14,4,2027,0,Ambedkar Jayanti
+15,4,2027,1,Rama Navami
+17,5,2027,1,Bakrid/Eid ul-Adha
+16,6,2027,1,Muharram/Ashura
+5,7,2027,0,Rath Yatra
+15,8,2027,1,Independence Day/Weekend
+17,8,2027,0,Raksha Bandhan (Rakhi)
+25,8,2027,1,Janmashtami
+25,8,2027,1,Janmashtami (Smarta)
+4,9,2027,1,Ganesh Chaturthi/Vinayaka Chaturthi/Weekend
+12,9,2027,1,Onam/Weekend
+30,9,2027,0,First Day of Sharad Navratri
+2,10,2027,1,Mahatma Gandhi Jayanti/Weekend
+5,10,2027,0,First Day of Durga Puja Festivities
+9,10,2027,1,Dussehra/Weekend
+18,10,2027,0,Karaka Chaturthi (Karva Chauth)
+29,10,2027,1,Diwali/Deepavali
+31,10,2027,1,Bhai Duj/Weekend
+4,11,2027,0,Chhat Puja (Pratihar Sashthi/Surya Sashthi)
+24,11,2027,0,Guru Tegh Bahadur's Martyrdom Day
+24,12,2027,0,Christmas Eve
+25,12,2027,1,Christmas/Weekend
+1,1,2028,1,New Year's Day/Weekend
+15,1,2028,1,Makar Sankranti/Weekend
+15,1,2028,1,Pongal/Weekend
+26,1,2028,1,Republic Day
+31,1,2028,0,Vasant Panchami
+19,2,2028,1,Shivaji Jayanti/Weekend
+23,2,2028,0,Maha Shivaratri/Shivaratri
+27,2,2028,1,Ramzan Id/Eid-ul-Fitar/Weekend
+11,3,2028,1,Holi/Weekend
+27,3,2028,0,Ugadi
+27,3,2028,0,Gudi Padwa
+3,4,2028,1,Rama Navami
+14,4,2028,1,Good Friday
+14,4,2028,1,Ambedkar Jayanti
+16,4,2028,1,Easter Day/Weekend
+6,5,2028,1,Bakrid/Eid ul-Adha/Weekend
+4,6,2028,1,Muharram/Ashura/Weekend
+24,6,2028,1,Rath Yatra/Weekend
+5,8,2028,1,Raksha Bandhan (Rakhi)/Weekend
+13,8,2028,1,Janmashtami/Weekend
+13,8,2028,1,Janmashtami (Smarta)/Weekend
+15,8,2028,1,Independence Day
+23,8,2028,0,Ganesh Chaturthi/Vinayaka Chaturthi
+1,9,2028,0,Onam
+19,9,2028,0,First Day of Sharad Navratri
+24,9,2028,1,First Day of Durga Puja Festivities/Weekend
+27,9,2028,1,Dussehra
+2,10,2028,1,Mahatma Gandhi Jayanti
+7,10,2028,1,Karaka Chaturthi (Karva Chauth)/Weekend
+17,10,2028,1,Diwali/Deepavali
+19,10,2028,0,Bhai Duj
+23,10,2028,0,Chhat Puja (Pratihar Sashthi/Surya Sashthi)
+24,11,2028,0,Guru Tegh Bahadur's Martyrdom Day
+24,12,2028,1,Christmas Eve/Weekend
+25,12,2028,1,Christmas
+1,1,2029,0,New Year's Day
+14,1,2029,1,Makar Sankranti/Weekend
+14,1,2029,1,Pongal/Weekend
+19,1,2029,0,Vasant Panchami
+26,1,2029,1,Republic Day
+11,2,2029,1,Maha Shivaratri/Shivaratri/Weekend
+15,2,2029,1,Ramzan Id/Eid-ul-Fitar
+19,2,2029,0,Shivaji Jayanti
+1,3,2029,1,Holi
+30,3,2029,1,Good Friday
+1,4,2029,1,Easter Day/Weekend
+14,4,2029,1,Ugadi/Weekend
+14,4,2029,1,Gudi Padwa/Weekend
+14,4,2029,1,Ambedkar Jayanti/Weekend
+22,4,2029,1,Rama Navami/Weekend
+25,4,2029,1,Bakrid/Eid ul-Adha
+25,5,2029,1,Muharram/Ashura
+13,7,2029,0,Rath Yatra
+15,8,2029,1,Independence Day
+22,8,2029,0,Onam
+23,8,2029,0,Raksha Bandhan (Rakhi)
+1,9,2029,1,Janmashtami/Weekend
+1,9,2029,1,Janmashtami (Smarta)/Weekend
+11,9,2029,0,Ganesh Chaturthi/Vinayaka Chaturthi
+2,10,2029,1,Mahatma Gandhi Jayanti
+8,10,2029,0,First Day of Sharad Navratri
+12,10,2029,0,First Day of Durga Puja Festivities
+16,10,2029,1,Dussehra
+26,10,2029,0,Karaka Chaturthi (Karva Chauth)
+5,11,2029,1,Diwali/Deepavali
+7,11,2029,0,Bhai Duj
+11,11,2029,1,Chhat Puja (Pratihar Sashthi/Surya Sashthi)/Weekend
+24,11,2029,1,Guru Tegh Bahadur's Martyrdom Day/Weekend
+24,12,2029,0,Christmas Eve
+25,12,2029,1,Christmas
+1,1,2030,0,New Year's Day
+14,1,2030,0,Makar Sankranti
+14,1,2030,0,Pongal
+26,1,2030,1,Republic Day/Weekend
+5,2,2030,1,Ramzan Id/Eid-ul-Fitar
+7,2,2030,0,Vasant Panchami
+19,2,2030,0,Shivaji Jayanti
+2,3,2030,1,Maha Shivaratri/Shivaratri/Weekend
+20,3,2030,1,Holi
+3,4,2030,0,Ugadi
+3,4,2030,0,Gudi Padwa
+12,4,2030,1,Rama Navami
+14,4,2030,1,Bakrid/Eid ul-Adha/Weekend
+14,4,2030,1,Ambedkar Jayanti/Weekend
+19,4,2030,1,Good Friday
+21,4,2030,1,Easter Day/Weekend
+14,5,2030,1,Muharram/Ashura
+2,7,2030,0,Rath Yatra
+13,8,2030,0,Raksha Bandhan (Rakhi)
+15,8,2030,1,Independence Day
+21,8,2030,1,Janmashtami
+21,8,2030,1,Janmashtami (Smarta)
+1,9,2030,1,Ganesh Chaturthi/Vinayaka Chaturthi/Weekend
+9,9,2030,0,Onam
+28,9,2030,1,First Day of Sharad Navratri/Weekend
+2,10,2030,1,Mahatma Gandhi Jayanti
+2,10,2030,1,First Day of Durga Puja Festivities
+6,10,2030,1,Dussehra/Weekend
+15,10,2030,0,Karaka Chaturthi (Karva Chauth)
+26,10,2030,1,Diwali/Deepavali/Weekend
+28,10,2030,0,Bhai Duj
+1,11,2030,0,Chhat Puja (Pratihar Sashthi/Surya Sashthi)
+24,11,2030,1,Guru Tegh Bahadur's Martyrdom Day/Weekend
+24,12,2030,0,Christmas Eve
+25,12,2030,1,Christmas

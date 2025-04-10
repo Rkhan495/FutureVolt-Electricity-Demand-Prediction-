@@ -1,4 +1,4 @@
-Date,low_price,high_price,Average_Price_Rs_Per_Sqft,QoQ_Price_Change_Percent(%),Average_Price,QoQ_Price
+Date,low_price,high_price,Average_Price_Rs_Per_Sqft,QoQ_Price_Change_Percent,Average_Price,QoQ_Price
 01-01-2010,2455,69885,12227.35955,1.547136051,36170,1.547136051
 01-04-2010,1896,78849,11788.22727,6.923611577,40372.5,11.61874482
 01-07-2010,2897,70767,11719.17708,3.103058377,36832,-8.769583256
