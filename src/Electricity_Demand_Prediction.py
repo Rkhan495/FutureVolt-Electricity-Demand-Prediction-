@@ -1,6 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from datetime import datetime
 import calendar
 import pandas as pd
@@ -10,24 +12,32 @@ import csv
 import json
 import os
 
-chrome_options = Options()
-chrome_options.add_argument("--headless")  # Run in headless mode (no UI)
-chrome_options.add_argument("--disable-gpu")  # Avoid rendering issues
-chrome_options.add_argument("--window-size=1920x1080")  # Ensure full page loading
+def init_driver():
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--no-sandbox")
+    return webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()), 
+        options=options
+    )
 
 # Initialize WebDriver with headless mode
-driver = webdriver.Chrome(options=chrome_options)
+driver = init_driver()
 driver.get("https://www.timeanddate.com/weather/india/new-delhi/hourly")
 driver.implicitly_wait(10)
 
-holiday_data = pd.read_csv('data/Holidays.csv')
-solar_data = pd.read_csv('solar_data_forecast.csv')
-real_estate_data = pd.read_csv('real_estate_price_forecast.csv')
-model = joblib.load('model2.pkl')
-csv_file = "data/All_Data.csv"
-json_file = "data/data.json"
-
-file_path = "data/Forecast_Data.csv"
+holiday_data_path = os.path.join("data", "Holidays.csv")
+holiday_data = pd.read_csv(holiday_data_path)
+solar_data_path = os.path.join("solar_data_forecast.csv")
+solar_data = pd.read_csv(solar_data_path)
+real_estate_data_path = os.path.join("real_estate_price_forecast.csv")
+real_estate_data = pd.read_csv(real_estate_data_path)
+model_path = os.path.join("model.pkl")
+model = joblib.load(model_path)
+csv_file = os.path.join("data", "All_Data.csv")
+json_file = os.path.join("data", "data.json")
+file_path = os.path.join("data", "Forecast_Data.csv")
 
 if os.path.exists(file_path):
     os.remove(file_path)

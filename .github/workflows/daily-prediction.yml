@@ -1,0 +1,42 @@
+name: Daily Prediction Update
+
+on:
+  schedule:
+    - cron: '30 18 * * *'  # Runs daily at 00:00 IST (18:30 UTC)
+  workflow_dispatch:       # Allows manual runs
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libnss3 libx11-xcb1 libgbm1
+
+    - name: Install Python packages
+      run: |
+        pip install selenium webdriver-manager pandas numpy joblib
+
+    - name: Run prediction script
+      run: |
+        python src/Electricity_Demand_Prediction.py
+
+    - name: Commit and push changes
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add .
+        git commit -m "Auto-update: New predictions $(date +'%Y-%m-%d')"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
