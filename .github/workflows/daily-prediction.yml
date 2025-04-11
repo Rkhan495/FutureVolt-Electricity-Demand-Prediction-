@@ -44,6 +44,11 @@ jobs:
     - name: Run prediction script
       run: python src/Electricity_Demand_Prediction.py
 
+    - name: Pull latest changes before pushing
+      run: |
+        git fetch origin master
+        git reset --soft origin/master  # ✅ Avoids conflicts by aligning history
+        
     - name: Commit and push changes
       run: |
         git config --global user.name "GitHub Actions"
