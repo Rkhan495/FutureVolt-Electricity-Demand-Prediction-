@@ -83,9 +83,9 @@ for hd in date_links:
             date_part = None
             
         # Convert 12-hour format into 24-hour
-        if 'PM' in hour_part and '12:' not in hour_part:
+        if 'pm' in hour_part and '12:' not in hour_part:
             hour = int(hour_part.split(":")[0]) + 12
-        elif 'AM' in hour_part and '12:' in hour_part:
+        elif 'am' in hour_part and '12:' in hour_part:
             hour = 0  # Midnight
         else:
             hour = int(hour_part.split(":")[0])
@@ -223,7 +223,7 @@ for hd in date_links:
         # Interaction Feature
         temp_x_hour = temp * hour
         
-        prediction = model.predict(pd.DataFrame({"Weekday": [weekday], "Temperature": [temp], "Condition": [condition], "Humidity": [humidity], 
+        prediction = model.predict(pd.DataFrame({"Weekday": [weekday], "Temperature": [round(temp, 2)], "Condition": [condition], "Humidity": [humidity], 
                     "Wind_Speed": [wind_speed], "Holiday": [holiday], "Event": [event], "Rainfall": [rain], 
                     "Solar_Generation": [round(solar_generation, 2)], "low_price": [round(low_price, 2)], 
                     "high_price": [round(high_price, 2)], "Average_Price_Rs_Per_Sqft": [round(avg_price, 2)], 

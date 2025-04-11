@@ -2,7 +2,7 @@ name: Daily Prediction Update
 
 on:
   schedule:
-    - cron: '30 18 * * *'  # Runs daily at 00:00 IST (18:30 UTC)
+    - cron: '00 18 * * *'  # Runs daily at 23:30 IST (18:00 UTC)
   workflow_dispatch:       # Allows manual runs
 
 jobs:
