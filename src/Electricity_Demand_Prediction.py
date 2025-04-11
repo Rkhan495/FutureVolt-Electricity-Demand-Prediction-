@@ -17,7 +17,7 @@ def init_driver():
     options.add_argument("--headless=new")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
-    service = Service("/usr/local/bin/chromedriver")
+    service = Service(ChromeDriverManager().install())
     return webdriver.Chrome(
         service=service,
         options=options

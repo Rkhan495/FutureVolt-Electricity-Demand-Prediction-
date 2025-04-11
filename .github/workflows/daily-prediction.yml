@@ -10,8 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
+    - name: Checkout repository with LFS support
       uses: actions/checkout@v4
+      with:
+        lfs: true  # ✅ Ensures LFS files are fetched
+
+    - name: Install Git LFS and Fetch Large Files
+      run: |
+        git lfs install
+        git lfs pull  # ✅ Downloads LFS-tracked files
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -22,22 +29,15 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y google-chrome-stable libnss3 libx11-xcb1 libgbm1 wget unzip
-        CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
-        CHROME_MAJOR=$(echo $CHROME_VERSION | cut -d'.' -f1)
-        CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/linux64/chromedriver-linux64.zip"
-        wget -q "$CHROMEDRIVER_URL" -O chromedriver.zip
-        unzip chromedriver.zip
-        sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
-        sudo chmod +x /usr/local/bin/chromedriver
 
     - name: Install Python packages
       run: |
         pip install --upgrade pip
         pip install --no-cache-dir -r requirements.txt
+        python -c "from webdriver_manager.chrome import ChromeDriverManager; ChromeDriverManager().install()"
 
     - name: Run prediction script
-      run: |
-        python src/Electricity_Demand_Prediction.py
+      run: python src/Electricity_Demand_Prediction.py
 
     - name: Commit and push changes
       run: |
