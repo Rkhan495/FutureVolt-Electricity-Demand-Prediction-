@@ -25,8 +25,8 @@ jobs:
 
     - name: Install Python packages
       run: |
-        pip install selenium webdriver-manager pandas numpy joblib scikit-learn
-
+        pip install -r requirements.txt
+        
     - name: Run prediction script
       run: |
         python src/Electricity_Demand_Prediction.py

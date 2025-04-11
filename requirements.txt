@@ -1,0 +1,15 @@
+# Core ML
+scikit-learn==1.6.1
+joblib==1.4.2
+numpy==1.26.4
+pandas==2.2.1
+
+# Browser automation
+selenium==4.20.0
+webdriver-manager==4.0.1
+
+# FastAPI dependencies
+python-dateutil==2.9.0
+urllib3==2.2.1
+tzdata==2024.1  # Explicit pandas dependency
+threadpoolctl==3.4.0  # Scikit-learn requirement
