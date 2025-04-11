@@ -219,7 +219,7 @@ for hd in date_links:
         dayofyear_sin, dayofyear_cos = cyclic_encoding(day_of_year, 365)
 
         # Interaction Feature
-        temp_x_hour = temp * hour
+        temp_x_hour = round(temp, 2) * hour
         
         prediction = model.predict(pd.DataFrame({"Weekday": [weekday], "Temperature": [round(temp, 2)], "Condition": [condition], "Humidity": [humidity], 
                     "Wind_Speed": [wind_speed], "Holiday": [holiday], "Event": [event], "Rainfall": [rain], 
@@ -247,7 +247,7 @@ for hd in date_links:
         data = {
             'Date': [f'{day_new}-{month_new}-{year}'],
             'Time': [f'{hour_new}-00:{hour_next}:00'],
-            "Weekday": [calendar.day_name[weekday]], "Temperature": [temp], "Condition": [condition], "Humidity": [humidity], 
+            "Weekday": [calendar.day_name[weekday]], "Temperature": [round(temp, 2)], "Condition": [condition], "Humidity": [humidity], 
             "Wind_Speed": [wind_speed], "Holiday": [holiday], "Event": [event], "Rainfall": [rain], 
             "Solar_Generation": [round(solar_generation, 2)], "low_price": [round(low_price, 2)], 
             "high_price": [round(high_price, 2)], "Average_Price_Rs_Per_Sqft": [round(avg_price, 2)], 
@@ -267,7 +267,7 @@ for hd in date_links:
         data_df.to_csv(forecast_data_file, index=False, mode='a', header=not os.path.exists(forecast_data_file))
 
         weather_data.append([
-            weekday, temp, condition, humidity, wind_speed, holiday, event, rain, round(solar_generation, 2),
+            weekday, round(temp, 2), condition, humidity, wind_speed, holiday, event, rain, round(solar_generation, 2),
             round(low_price, 2), round(high_price, 2), round(avg_price, 2), round(QoQ_price, 2), day, month, year, day_of_year, hour,
             hour_sin, hour_cos, weekday_sin, weekday_cos, month_sin, month_cos, dayofyear_sin, dayofyear_cos, temp_x_hour
         ])
