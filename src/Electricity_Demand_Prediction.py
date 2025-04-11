@@ -139,7 +139,6 @@ for hd in date_links:
         
         # Hour (24h format)
         print('Hour part:', hour_part)
-        hour = int(hour_part.split(":")[0])
         print('Hour:', hour)
         
         # Function to remove duplicate words while preserving order
