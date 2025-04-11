@@ -42,16 +42,7 @@ def create_document(data_row, is_current):
         "Holiday": bool(int(data_row["Holiday"])),
         "Event": data_row["Event"] if data_row["Event"] not in ['No', ''] else None,
         "Load": float(data_row["Load"]),
-        "IsForecast": not is_current
     }
-    
-    # Add additional fields for forecast data
-    if not is_current:
-        doc.update({
-            "Solar_Generation": float(data_row["Solar_Generation"]),
-            "Average_Price": float(data_row["Average_Price_Rs_Per_Sqft"]),
-            "Price_Change": float(data_row["QoQ_Price_Change_Percent"])
-        })
     
     return doc
 
@@ -280,10 +271,7 @@ for hd in date_links:
             'Wind_Speed': wind_speed,
             'Holiday': holiday,
             'Event': event,
-            'Load': np.round(prediction, 3)[0],
-            'Solar_Generation': round(solar_generation, 2),
-            'Average_Price_Rs_Per_Sqft': round(avg_price, 2),
-            'QoQ_Price_Change_Percent': round(QoQ_price, 2)
+            'Load': np.round(prediction, 3)[0]
         }, is_current)
 
         # Insert into MongoDB
