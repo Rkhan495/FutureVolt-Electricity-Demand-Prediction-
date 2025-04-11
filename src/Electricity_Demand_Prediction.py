@@ -104,8 +104,31 @@ for hd in date_links:
         # Weather condition
         condition = cols[3].text.strip().rstrip('.')
         
-        # Wind speed (m/s)
-        wind_speed = int(cols[5].text.replace("km/h", "").strip())
+        # Unified unit parsing function
+        def parse_measurement(text, units):
+            """Parse measurements with automatic unit conversion"""
+            for unit in units:
+                if unit in text:
+                    value = text.replace(unit, "").strip()
+                    try:
+                        num = float(value)
+                        return num
+                    except ValueError:
+                        return None
+            return None
+
+        # Wind speed parsing with conversion
+        wind_speed_text = cols[5].text.strip()
+        wind_speed = parse_measurement(wind_speed_text, ["km/h", "mph"])
+
+        if wind_speed is not None:
+            if "mph" in wind_speed_text:
+                wind_speed = round(wind_speed * 1.60934, 2)
+        else:
+            wind_speed = 0  # Default value or skip the record
+
+        # Add debug output
+        print(f"Raw wind speed: {wind_speed_text} → Parsed: {wind_speed} km/h")
         
         # Humidity (%)
         humidity = int(cols[7].text.replace("%", "").strip())
