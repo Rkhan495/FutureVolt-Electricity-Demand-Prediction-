@@ -99,7 +99,7 @@ for hd in date_links:
         elif '°C' in temp_text:
             temp = int(temp_text.replace("°C", "").strip())
         else:
-            temp = None
+            temp = 25
         
         # Weather condition
         condition = cols[3].text.strip().rstrip('.')
