@@ -10,6 +10,7 @@ import joblib
 import csv
 import json
 import os
+import pymongo
 
 def init_driver():
     options = Options()
@@ -21,6 +22,38 @@ def init_driver():
         service=service,
         options=options
     )
+
+# MongoDB connection setup
+client = pymongo.MongoClient(
+    "mongodb+srv://sanket:1234@cluster0.idpycqu.mongodb.net/FutureVolt?retryWrites=true&w=majority"
+)
+db = client.FutureVolt
+
+def create_document(data_row, is_current):
+    """Create MongoDB document from data row"""
+    doc = {
+        "Date": data_row["Date"],
+        "Time": data_row["Time"],
+        "Weekday": data_row["Weekday"],
+        "Temperature": float(data_row["Temperature"]),
+        "Condition": data_row["Condition"],
+        "Humidity": int(data_row["Humidity"]),
+        "Wind_Speed": float(data_row["Wind_Speed"]),
+        "Holiday": bool(int(data_row["Holiday"])),
+        "Event": data_row["Event"] if data_row["Event"] not in ['No', ''] else None,
+        "Load": float(data_row["Load"]),
+        "IsForecast": not is_current
+    }
+    
+    # Add additional fields for forecast data
+    if not is_current:
+        doc.update({
+            "Solar_Generation": float(data_row["Solar_Generation"]),
+            "Average_Price": float(data_row["Average_Price_Rs_Per_Sqft"]),
+            "Price_Change": float(data_row["QoQ_Price_Change_Percent"])
+        })
+    
+    return doc
 
 # Initialize WebDriver with headless mode
 driver = init_driver()
@@ -232,6 +265,38 @@ for hd in date_links:
         hour_24 = hour % 24  # Ensure 23 becomes 23, 24 becomes 0
         hour_new = f"{hour_24:02d}"
         hour_next = f"{(hour_24 + 1) % 24:02d}"
+        
+        today = datetime.now()
+        is_current = (day == today.day and month == today.month and year == today.year)
+        
+        # Create document for MongoDB
+        document = create_document({
+            'Date': f"{day:02d}-{month:02d}-{year}",
+            'Time': f"{hour_new}-00:{hour_next}:00",
+            'Weekday': calendar.day_name[weekday],
+            'Temperature': round(temp, 2),
+            'Condition': condition,
+            'Humidity': humidity,
+            'Wind_Speed': wind_speed,
+            'Holiday': holiday,
+            'Event': event,
+            'Load': np.round(prediction, 3)[0],
+            'Solar_Generation': round(solar_generation, 2),
+            'Average_Price_Rs_Per_Sqft': round(avg_price, 2),
+            'QoQ_Price_Change_Percent': round(QoQ_price, 2)
+        }, is_current)
+
+        # Insert into MongoDB
+        try:
+            # Always insert into FutureData
+            db.FutureData.insert_one(document)
+            
+            # Insert into AllData if current
+            if is_current:
+                db.data.insert_one(document)
+        except Exception as e:
+            print(f"MongoDB insertion error: {str(e)}")
+
         
         all_data_file = "data/All_Data.csv"
         forecast_data_file = "data/Forecast_Data.csv"
