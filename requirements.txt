@@ -7,6 +7,7 @@ pandas==2.2.1
 # Browser automation
 selenium==4.20.0
 webdriver-manager==4.0.1
+chromedriver-autoinstaller==0.4.0
 
 # FastAPI dependencies
 python-dateutil==2.9.0

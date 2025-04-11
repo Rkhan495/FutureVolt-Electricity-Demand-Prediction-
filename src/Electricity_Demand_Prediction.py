@@ -3,6 +3,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+import chromedriver_autoinstaller
 from datetime import datetime
 import calendar
 import pandas as pd
@@ -13,12 +14,14 @@ import json
 import os
 
 def init_driver():
+    # Auto-install ChromeDriver
+    chromedriver_autoinstaller.install()
+    
     options = Options()
     options.add_argument("--headless=new")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
     return webdriver.Chrome(
-        service=Service(executable_path='/usr/local/bin/chromedriver'),
         options=options
     )
 
