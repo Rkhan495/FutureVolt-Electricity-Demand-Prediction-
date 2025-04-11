@@ -29,27 +29,30 @@ jobs:
 
     - name: Install Chrome and Driver
       run: |
-        # Install latest Chrome
+        # Install Chrome from official source
         sudo apt-get update
-        sudo apt-get install -y wget unzip
-        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -fy install
+        sudo apt-get install -y wget unzip gnupg
+        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+    
+        # Get Chrome major version
+        CHROME_MAJOR=$(google-chrome --version | awk '{print $3}' | cut -d'.' -f1)
         
-        # Get exact Chrome version
-        CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
-        echo "Chrome version: $CHROME_VERSION"
+        # Get matching ChromeDriver version
+        CHROMEDRIVER_VERSION=$(wget -q -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR")
         
-        # Install matching ChromeDriver
-        CHROME_MAJOR=$(echo $CHROME_VERSION | cut -d'.' -f1)
-        CHROME_BUILD=$(echo $CHROME_VERSION | cut -d'.' -f3)
-        CHROMEDRIVER_VERSION="${CHROME_MAJOR}.0.${CHROME_BUILD}"
-        
-        wget https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip
+        # Download and install ChromeDriver
+        wget "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
         unzip chromedriver_linux64.zip
         sudo mv chromedriver /usr/local/bin/
         sudo chmod +x /usr/local/bin/chromedriver
-        chromedriver --version
-
+        
+    - name: Verify versions
+      run: |
+        echo "Chrome: $(google-chrome --version)"
+        echo "ChromeDriver: $(chromedriver --version)"
     - name: Run prediction script
       run: |
         python src/Electricity_Demand_Prediction.py
