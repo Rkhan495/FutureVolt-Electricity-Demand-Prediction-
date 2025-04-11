@@ -14,11 +14,11 @@ import os
 
 def init_driver():
     options = Options()
-    options.add_argument("--headless")
+    options.add_argument("--headless=new")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
     return webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()), 
+        service=Service(executable_path='/usr/local/bin/chromedriver'),
         options=options
     )
 
