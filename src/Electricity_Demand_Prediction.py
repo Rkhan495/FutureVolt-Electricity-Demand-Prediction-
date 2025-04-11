@@ -132,7 +132,6 @@ for hd in date_links:
         else:
             wind_speed = 0  # Default value or skip the record
         print('wind speed:',wind_speed)
-        # Add debug output
         
         # Humidity (%)
         humidity = int(cols[7].text.replace("%", "").strip())
