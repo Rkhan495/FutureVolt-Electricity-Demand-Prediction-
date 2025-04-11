@@ -81,6 +81,14 @@ for hd in date_links:
         else:
             hour_part = time_cell
             date_part = None
+            
+        # Convert 12-hour format to 24-hour
+        if 'PM' in hour_part and '12:' not in hour_part:
+            hour = int(hour_part.split(":")[0]) + 12
+        elif 'AM' in hour_part and '12:' in hour_part:
+            hour = 0  # Midnight
+        else:
+            hour = int(hour_part.split(":")[0])
         
         # Parse date using hd_param (YYYYMMDD)
         day = int(hd[6:8])
@@ -90,15 +98,13 @@ for hd in date_links:
         day_of_year = full_date.timetuple().tm_yday
         
         # Temperature parsing with unit conversion
-        temp_text = cols[1].text.strip()  # Verify correct column index
+        temp_text = cols[2].text.strip()  # Verify correct column index
         print('temp text:', temp_text)
         if '°F' in temp_text:
             temp_f = int(temp_text.replace("°F", "").strip())
             temp = (temp_f - 32) * 5/9  # Convert Fahrenheit to Celsius
         elif '°C' in temp_text:
             temp = int(temp_text.replace("°C", "").strip())
-        else:
-            temp = 25
         
         # Weather condition
         condition = cols[3].text.strip().rstrip('.')
@@ -232,8 +238,10 @@ for hd in date_links:
         
         day_new = str(day).zfill(2)
         month_new = str(month).zfill(2)
-        hour_new = str(hour).zfill(2)
-        hour_next = str(hour + 1).zfill(2) if hour != 23 else "00"
+        # Handle 24-hour conversion for output formatting
+        hour_24 = hour % 24  # Ensure 23 becomes 23, 24 becomes 0
+        hour_new = f"{hour_24:02d}"
+        hour_next = f"{(hour_24 + 1) % 24:02d}"
         
         all_data_file = "data/All_Data.csv"
         forecast_data_file = "data/Forecast_Data.csv"
