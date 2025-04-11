@@ -82,7 +82,7 @@ for hd in date_links:
             hour_part = time_cell
             date_part = None
             
-        # Convert 12-hour format to 24-hour
+        # Convert 12-hour format into 24-hour
         if 'PM' in hour_part and '12:' not in hour_part:
             hour = int(hour_part.split(":")[0]) + 12
         elif 'AM' in hour_part and '12:' in hour_part:
