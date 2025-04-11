@@ -3,7 +3,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-import chromedriver_autoinstaller
 from datetime import datetime
 import calendar
 import pandas as pd
@@ -14,14 +13,13 @@ import json
 import os
 
 def init_driver():
-    # Auto-install ChromeDriver
-    chromedriver_autoinstaller.install()
-    
     options = Options()
     options.add_argument("--headless=new")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
+    driver_path = "/usr/local/bin/chromedriver"
     return webdriver.Chrome(
+        driver_path,
         options=options
     )
 
@@ -37,7 +35,8 @@ solar_data = pd.read_csv(solar_data_path)
 real_estate_data_path = os.path.join("real_estate_price_forecast.csv")
 real_estate_data = pd.read_csv(real_estate_data_path)
 model_path = os.path.join("model.pkl")
-model = joblib.load(model_path)
+with open(model_path, 'rb') as f:
+    model = joblib.load(f)
 csv_file = os.path.join("data", "All_Data.csv")
 json_file = os.path.join("data", "data.json")
 file_path = os.path.join("data", "Forecast_Data.csv")

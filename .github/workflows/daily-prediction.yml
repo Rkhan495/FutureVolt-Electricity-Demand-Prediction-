@@ -21,11 +21,19 @@ jobs:
     - name: Install Chrome and dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y google-chrome-stable libnss3 libx11-xcb1 libgbm1
+        sudo apt-get install -y google-chrome-stable libnss3 libx11-xcb1 libgbm1 wget unzip
+        CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
+        CHROME_MAJOR=$(echo $CHROME_VERSION | cut -d'.' -f1)
+        CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/linux64/chromedriver-linux64.zip"
+        wget -q "$CHROMEDRIVER_URL" -O chromedriver.zip
+        unzip chromedriver.zip
+        sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
+        sudo chmod +x /usr/local/bin/chromedriver
 
     - name: Install Python packages
       run: |
-        pip install -r requirements.txt
+        pip install --upgrade pip
+        pip install --no-cache-dir -r requirements.txt
 
     - name: Run prediction script
       run: |
