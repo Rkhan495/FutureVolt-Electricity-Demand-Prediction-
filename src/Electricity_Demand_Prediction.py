@@ -91,6 +91,7 @@ for hd in date_links:
         
         # Temperature parsing with unit conversion
         temp_text = cols[1].text.strip()  # Verify correct column index
+        print('temp text:', temp_text)
         if '°F' in temp_text:
             temp_f = int(temp_text.replace("°F", "").strip())
             temp = (temp_f - 32) * 5/9  # Convert Fahrenheit to Celsius
@@ -117,14 +118,14 @@ for hd in date_links:
 
         # Wind speed parsing with conversion
         wind_speed_text = cols[5].text.strip()
+        print('wind speed text:',wind_speed_text)
         wind_speed = parse_measurement(wind_speed_text, ["km/h", "mph"])
 
         if wind_speed is not None:
-            if "mph" in wind_speed_text:
-                wind_speed = round(wind_speed * 1.60934, 2)
+            wind_speed = round(wind_speed, 2)
         else:
             wind_speed = 0  # Default value or skip the record
-
+        print('wind speed:',wind_speed)
         # Add debug output
         print(f"Raw wind speed: {wind_speed_text} → Parsed: {wind_speed} km/h")
         
@@ -132,7 +133,9 @@ for hd in date_links:
         humidity = int(cols[7].text.replace("%", "").strip())
         
         # Hour (24h format)
+        print('Hour part:', hour_part)
         hour = int(hour_part.split(":")[0])
+        print('Hour:', hour)
         
         # Function to remove duplicate words while preserving order
         def unique_event_concat(events):
