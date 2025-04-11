@@ -1,5 +1,4 @@
 Date,Time,Weekday,Temperature,Condition,Humidity,Wind_Speed,Holiday,Event,Rainfall,Solar_Generation,low_price,high_price,Average_Price_Rs_Per_Sqft,QoQ_Price_Change_Percent,Load,BRPL,BYPL,NDPL,NDMC,MES
-12-04-2025,00-00:01:00,Saturday,24.44,Overcast,62,8.0,1,Weekend,0.0,0.59,2935.75,600423.86,301679.8,3.26,46794.709,,,,,
 12-04-2025,01-00:02:00,Saturday,25.0,Cloudy,60,9.0,1,Weekend,0.0,0.59,2935.75,600423.86,301679.8,3.26,48150.719,,,,,
 12-04-2025,02-00:03:00,Saturday,25.0,Overcast,60,11.0,1,Weekend,0.0,0.59,2935.75,600423.86,301679.8,3.26,47179.971,,,,,
 12-04-2025,03-00:04:00,Saturday,24.44,Cloudy,61,9.0,1,Weekend,0.0,0.59,2935.75,600423.86,301679.8,3.26,42730.611,,,,,
