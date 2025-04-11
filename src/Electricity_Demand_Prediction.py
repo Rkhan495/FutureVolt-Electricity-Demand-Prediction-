@@ -275,7 +275,6 @@ columns = [
 
 df = pd.DataFrame(weather_data, columns=columns)
 
-# Save to CSV
 df.to_csv("sample_data.csv", index=False)
 
 drop_columns = {
