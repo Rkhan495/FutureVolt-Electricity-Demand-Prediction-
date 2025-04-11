@@ -2,7 +2,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from datetime import datetime
 import calendar
 import pandas as pd
@@ -35,8 +34,7 @@ solar_data = pd.read_csv(solar_data_path)
 real_estate_data_path = os.path.join("real_estate_price_forecast.csv")
 real_estate_data = pd.read_csv(real_estate_data_path)
 model_path = os.path.join("model.pkl")
-with open(model_path, 'rb') as f:
-    model = joblib.load(f)
+model = joblib.load(model_path)
 csv_file = os.path.join("data", "All_Data.csv")
 json_file = os.path.join("data", "data.json")
 file_path = os.path.join("data", "Forecast_Data.csv")
