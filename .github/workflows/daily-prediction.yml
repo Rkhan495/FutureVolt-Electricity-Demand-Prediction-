@@ -25,7 +25,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        pip install selenium webdriver-manager pandas numpy joblib
+        pip install selenium webdriver-manager pandas numpy joblib scikit-learn
 
     - name: Run prediction script
       run: |
