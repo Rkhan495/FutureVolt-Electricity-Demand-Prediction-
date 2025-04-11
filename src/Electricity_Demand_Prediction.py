@@ -91,8 +91,15 @@ for hd in date_links:
         weekday = full_date.weekday()  # Monday = 0
         day_of_year = full_date.timetuple().tm_yday
         
-        # Extract temperature (°C)
-        temp = int(cols[2].text.replace("°C", "").strip())
+        # Temperature parsing with unit conversion
+        temp_text = cols[1].text.strip()  # Verify correct column index
+        if '°F' in temp_text:
+            temp_f = int(temp_text.replace("°F", "").strip())
+            temp = (temp_f - 32) * 5/9  # Convert Fahrenheit to Celsius
+        elif '°C' in temp_text:
+            temp = int(temp_text.replace("°C", "").strip())
+        else:
+            temp = None
         
         # Weather condition
         condition = cols[3].text.strip().rstrip('.')
