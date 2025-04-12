@@ -8,6 +8,7 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     
     steps:
     - name: Checkout repository with LFS support
@@ -19,6 +20,7 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+        cache: 'pip'
 
     - name: Install Chrome and Chromedriver
       run: |
@@ -38,18 +40,14 @@ jobs:
 
     - name: Run prediction script
       run: python src/Electricity_Demand_Prediction.py
-
-    - name: Pull latest changes before pushing
-      run: |
-        git fetch origin master
-        git reset --soft origin/master  # ✅ Avoids conflicts by aligning history
         
     - name: Commit and push changes
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
+        git pull --rebase origin master  # Safer than reset
         git add .
         git commit -m "Auto-update: New predictions $(date +'%Y-%m-%d')"
-        git push
+        git push origin HEAD:master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
