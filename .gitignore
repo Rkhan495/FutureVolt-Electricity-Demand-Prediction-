@@ -11,3 +11,4 @@ venv/
 do_not_upload
 sample_data.csv
 .env
+model.pkl
