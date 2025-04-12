@@ -341,7 +341,7 @@ drop_columns = {
 # Function to convert data types for MongoDB
 def convert_types(row):
     return {
-        "Date": row["Date"],  # Keep as string or convert to ISO format if needed
+        "Date": row["Date"],  # Keep as string
         "Time": row["Time"],  # Keep as string "HH:MM"
         "Weekday": row["Weekday"],  # Keep as string
         "Temperature": float(row["Temperature"]) if row["Temperature"] else None,  # Convert to float
