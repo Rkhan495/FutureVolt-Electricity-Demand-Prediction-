@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 30
     
     steps:
-    - name: Checkout repository with LFS support
+    - name: Checkout repository
       uses: actions/checkout@v4
       with:
         lfs: false  # ✅ Ensures LFS files are fetched
@@ -40,6 +40,8 @@ jobs:
 
     - name: Run prediction script
       run: python src/Electricity_Demand_Prediction.py
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}  # Pass the secret to the script
         
     - name: Commit and push changes
       run: |

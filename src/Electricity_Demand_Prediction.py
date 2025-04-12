@@ -1,3 +1,4 @@
+import sys
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -28,8 +29,27 @@ def init_driver():
     )
 
 # MongoDB connection setup
-mongodb_uri = os.getenv("MONGODB_URI")
-client = pymongo.MongoClient(mongodb_uri)
+try:
+    # Verify MongoDB URI is loaded
+    mongodb_uri = os.getenv("MONGODB_URI")
+    if not mongodb_uri:
+        raise ValueError("MONGODB_URI not found in environment variables")
+    
+    print(f"Connecting to MongoDB at: {mongodb_uri[:20]}...")  # Log partial URI
+    
+    client = pymongo.MongoClient(mongodb_uri, serverSelectionTimeoutMS=5000)
+    
+    # Test connection
+    client.admin.command('ping')
+    print("Successfully connected to MongoDB!")
+    
+except pymongo.errors.ConnectionFailure as e:
+    print(f"MongoDB connection failed: {str(e)}")
+    sys.exit(1)
+except Exception as e:
+    print(f"Error: {str(e)}")
+    sys.exit(1)
+    
 db = client.FutureVolt
 collection = db["FutureData"]
 today_date = datetime.now().strftime("%d-%m-%Y")
