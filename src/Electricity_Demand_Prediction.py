@@ -28,7 +28,7 @@ def init_driver():
 
 # MongoDB connection setup
 mongodb_uri = os.getenv("MONGODB_URI")
-client = pymongo.MongoClient(mongodb_uri)
+client = pymongo.MongoClient('mongodb+srv://sanket:1234@cluster0.idpycqu.mongodb.net/FutureVolt?retryWrites=true&w=majority')
 db = client.FutureVolt
 collection = db["FutureData"]
 today_date = datetime.now().strftime("%d-%m-%Y")
