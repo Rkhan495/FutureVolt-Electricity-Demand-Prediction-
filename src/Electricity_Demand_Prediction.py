@@ -28,8 +28,10 @@ client = pymongo.MongoClient(
     "mongodb+srv://sanket:1234@cluster0.idpycqu.mongodb.net/FutureVolt?retryWrites=true&w=majority"
 )
 db = client.FutureVolt
+collection = db["FutureData"]
+collection.delete_many({})
 
-def create_document(data_row, is_current):
+def create_document(data_row):
     """Create MongoDB document from data row"""
     doc = {
         "Date": data_row["Date"],
@@ -258,7 +260,7 @@ for hd in date_links:
         hour_next = f"{(hour_24 + 1) % 24:02d}"
         
         today = datetime.now()
-        is_current = (day == today.day and month == today.month and year == today.year)
+        is_current = (day == (today.day)+1 and month == today.month and year == today.year)
         
         # Create document for MongoDB
         document = create_document({
@@ -272,7 +274,7 @@ for hd in date_links:
             'Holiday': holiday,
             'Event': event,
             'Load': np.round(prediction, 3)[0]
-        }, is_current)
+        })
 
         # Insert into MongoDB
         try:
@@ -306,7 +308,7 @@ for hd in date_links:
             "QoQ_Price_Change_Percent", 'Load', 'BRPL', 'BYPL', 'NDPL', 'NDMC', 'MES'
         ])
 
-        if day == current_day and month == current_month and year == current_year:
+        if day == current_day+1 and month == current_month and year == current_year:
             data_df.to_csv(all_data_file, index=False, mode='a', header=False)
 
         data_df.to_csv(forecast_data_file, index=False, mode='a', header=not os.path.exists(forecast_data_file))
