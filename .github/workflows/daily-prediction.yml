@@ -13,12 +13,7 @@ jobs:
     - name: Checkout repository with LFS support
       uses: actions/checkout@v4
       with:
-        lfs: true  # ✅ Ensures LFS files are fetched
-
-    - name: Install Git LFS and Fetch Large Files
-      run: |
-        git lfs install
-        git lfs pull  # ✅ Downloads LFS-tracked files
+        lfs: false
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -40,6 +35,14 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install --no-cache-dir -r requirements.txt
+
+    - name: Download model
+      run: |
+        FILE_ID=1G46pHSZEY1UnG2YR8I2x7CX8IP6xlvGH
+        FILE_NAME=model.pkl
+        curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${FILE_ID}" > /tmp/intermediate.html
+        CONFIRM_CODE=$(grep -o 'confirm=[^&]*' /tmp/intermediate.html | head -n 1 | cut -d= -f2)
+        curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=${CONFIRM_CODE}&id=${FILE_ID}" -o ${FILE_NAME}
 
     - name: Run prediction script
       run: python src/Electricity_Demand_Prediction.py
