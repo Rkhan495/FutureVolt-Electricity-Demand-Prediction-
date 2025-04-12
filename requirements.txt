@@ -14,3 +14,4 @@ urllib3==2.2.1
 tzdata==2024.1  # Explicit pandas dependency
 threadpoolctl==3.4.0  # Scikit-learn requirement
 pymongo==4.12.0
+python-dotenv==1.1.0

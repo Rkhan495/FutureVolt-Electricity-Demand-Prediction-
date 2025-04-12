@@ -11,6 +11,9 @@ import csv
 import json
 import os
 import pymongo
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def init_driver():
     options = Options()
@@ -24,9 +27,8 @@ def init_driver():
     )
 
 # MongoDB connection setup
-client = pymongo.MongoClient(
-    "mongodb+srv://sanket:1234@cluster0.idpycqu.mongodb.net/FutureVolt?retryWrites=true&w=majority"
-)
+mongodb_uri = os.getenv("MONGODB_URI")
+client = pymongo.MongoClient(mongodb_uri)
 db = client.FutureVolt
 collection = db["FutureData"]
 collection.delete_many({})

@@ -10,3 +10,4 @@ venv/
 # Ignore files which should not be upload
 do_not_upload
 sample_data.csv
+env
