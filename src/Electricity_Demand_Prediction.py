@@ -31,7 +31,11 @@ mongodb_uri = os.getenv("MONGODB_URI")
 client = pymongo.MongoClient(mongodb_uri)
 db = client.FutureVolt
 collection = db["FutureData"]
+today_date = datetime.now().strftime("%d-%m-%Y")
+today_data = list(collection.find({"Date": today_date}))
 collection.delete_many({})
+if today_data:
+    collection.insert_many(today_data)
 
 def create_document(data_row):
     """Create MongoDB document from data row"""
