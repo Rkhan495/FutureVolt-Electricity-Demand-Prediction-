@@ -60,7 +60,7 @@ source venv/bin/activate
 
 pip install -r requirements.txt
 ```
-> ℹ️ requirements.txt includes only backend-related dependencies used in the prediction script. Frontend and deployment packages are maintained separately.
+> ℹ️ requirements.txt includes only dependencies used in the prediction script. Not entire project's packages.
 
 ---
 
