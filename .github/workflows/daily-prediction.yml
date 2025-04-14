@@ -55,5 +55,7 @@ jobs:
         git add .
         git commit -m "Auto-update: New predictions $(date +'%Y-%m-%d')"
         git push
+        git fetch origin
+        git pull origin master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
