@@ -53,9 +53,13 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git add .
-        git commit -m "Auto-update: New predictions $(date +'%Y-%m-%d')"
-        git push
-        git fetch origin
-        git pull origin master
+        if ! git diff-index --quiet HEAD; then
+          git commit -m "Auto-update: New predictions $(date +'%Y-%m-%d')"
+          git pull origin master --rebase  # Pulling with rebase before push avoids merge conflicts
+          git push
+        else
+          echo "No new data changes detected today. Skipping commit."
+        fi
+        
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
