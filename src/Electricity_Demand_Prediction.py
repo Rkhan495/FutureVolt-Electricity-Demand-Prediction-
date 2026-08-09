@@ -53,10 +53,10 @@ except Exception as e:
 db = client.FutureVolt
 collection = db["FutureData"]
 today_date = datetime.now().strftime("%d-%m-%Y")
-today_data = list(collection.find({"Date": today_date}))
-collection.delete_many({})
-if today_data:
-    collection.insert_many(today_data)
+# today_data = list(collection.find({"Date": today_date}))
+# collection.delete_many({})
+# if today_data:
+#     collection.insert_many(today_data)
 
 def create_document(data_row):
     """Create MongoDB document from data row"""
@@ -97,13 +97,30 @@ if os.path.exists(file_path):
     os.remove(file_path)
 
 # Collect date parameters from hrefs
-date_links = []
+print(f"Page title: {driver.title}")
+print(f"Page source snippet: {driver.page_source[:1000]}")
+
 elements = driver.find_elements(By.XPATH, "//a[contains(@href, '/weather/india/new-delhi/hourly?hd=')]")
+print(f"Found {len(elements)} date-link elements")
+
+date_links = []
 for elem in elements:
     href = elem.get_attribute("href")
-    # Extract unique date parameter (e.g., "hd=20250407")
     hd_param = href.split("hd=")[-1]
     date_links.append(hd_param)
+
+print(f"date_links (first 5): {date_links[:5]}")
+
+# Only touch the DB if scraping actually found something
+if date_links:
+    today_data = list(collection.find({"Date": today_date}))
+    collection.delete_many({})
+    if today_data:
+        collection.insert_many(today_data)
+else:
+    print("WARNING: No date links found — skipping DB wipe, exiting to avoid data loss.")
+    driver.quit()
+    sys.exit(1)  # this will make the Action show as FAILED instead of a silent success
 
 weather_data = []
 
