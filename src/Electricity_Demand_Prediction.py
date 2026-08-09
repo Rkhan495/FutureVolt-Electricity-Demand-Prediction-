@@ -17,16 +17,30 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# def init_driver():
+#     options = Options()
+#     options.add_argument("--headless=new")
+#     options.add_argument("--disable-dev-shm-usage")
+#     options.add_argument("--no-sandbox")
+#     service = Service("/usr/local/bin/chromedriver")
+#     return webdriver.Chrome(
+#         service=service,
+#         options=options
+#     )
+
+import undetected_chromedriver as uc
+
 def init_driver():
-    options = Options()
-    options.add_argument("--headless=new")
+    options = uc.ChromeOptions()
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
-    service = Service("/usr/local/bin/chromedriver")
-    return webdriver.Chrome(
-        service=service,
-        options=options
+    options.add_argument(
+        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     )
+    # Note: uc handles headless mode differently — use its own flag, not "--headless=new"
+    driver = uc.Chrome(options=options, headless=True, use_subprocess=True)
+    return driver
 
 # MongoDB connection setup
 try:
