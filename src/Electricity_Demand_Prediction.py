@@ -13,6 +13,8 @@ import csv
 import json
 import os
 import pymongo
+import time
+import random
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -92,6 +94,7 @@ def create_document(data_row):
 # Initialize WebDriver with headless mode
 driver = init_driver()
 driver.get("https://www.timeanddate.com/weather/india/new-delhi/hourly")
+time.sleep(random.uniform(3, 6))  # let any JS challenge resolve, look less robotic
 driver.implicitly_wait(10)
 
 holiday_data_path = os.path.join("data", "Holidays.csv")
