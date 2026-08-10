@@ -1,10 +1,8 @@
 name: Daily Prediction Update
-
 on:
   schedule:
     - cron: '00 18 * * *'  # Runs daily at 23:30 IST (18:00 UTC)
   workflow_dispatch:       # Allows manual runs
-
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -14,7 +12,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        lfs: false  # ✅ Ensures LFS files are fetched
+        lfs: false
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -22,16 +20,10 @@ jobs:
         python-version: '3.11'
         cache: 'pip'
 
-    - name: Install Chrome and Chromedriver
+    - name: Install Chrome
       run: |
         sudo apt-get update
-        sudo apt-get install -y google-chrome-stable libnss3 libx11-xcb1 libgbm1 wget unzip
-        CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
-        CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/linux64/chromedriver-linux64.zip"
-        wget -q "$CHROMEDRIVER_URL" -O chromedriver.zip
-        unzip -o chromedriver.zip
-        sudo mv -f chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
-        sudo chmod +x /usr/local/bin/chromedriver
+        sudo apt-get install -y google-chrome-stable libnss3 libx11-xcb1 libgbm1
 
     - name: Install Python packages
       run: |
@@ -41,8 +33,8 @@ jobs:
     - name: Run prediction script
       run: python src/Electricity_Demand_Prediction.py
       env:
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}  # Pass the secret to the script
-       
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+
     - name: Pull latest changes before pushing
       run: |
         git fetch origin master
@@ -55,11 +47,10 @@ jobs:
         git add .
         if ! git diff-index --quiet HEAD; then
           git commit -m "Auto-update: New predictions $(date +'%Y-%m-%d')"
-          git pull origin master --rebase  # Pulling with rebase before push avoids merge conflicts
+          git pull origin master --rebase
           git push
         else
           echo "No new data changes detected today. Skipping commit."
         fi
-        
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
