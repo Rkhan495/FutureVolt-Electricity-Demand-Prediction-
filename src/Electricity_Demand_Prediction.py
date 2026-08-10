@@ -15,6 +15,9 @@ import os
 import pymongo
 import time
 import random
+import subprocess
+import re
+import undetected_chromedriver as uc
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,7 +33,17 @@ load_dotenv()
 #         options=options
 #     )
 
-import undetected_chromedriver as uc
+def get_chrome_major_version():
+    """Detect the major version of Chrome actually installed on this runner."""
+    try:
+        output = subprocess.check_output(["google-chrome", "--version"]).decode()
+        match = re.search(r"(\d+)\.", output)
+        if match:
+            return int(match.group(1))
+    except Exception as e:
+        print(f"Could not determine Chrome version: {e}")
+    return None
+
 
 def init_driver():
     options = uc.ChromeOptions()
@@ -40,8 +53,14 @@ def init_driver():
         "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     )
-    # Note: uc handles headless mode differently — use its own flag, not "--headless=new"
-    driver = uc.Chrome(options=options, headless=True, use_subprocess=True)
+    chrome_major = get_chrome_major_version()
+    print(f"Detected installed Chrome major version: {chrome_major}")
+    driver = uc.Chrome(
+        options=options,
+        headless=True,
+        use_subprocess=True,
+        version_main=chrome_major,  # forces uc to fetch a matching chromedriver build
+    )
     return driver
 
 # MongoDB connection setup
