@@ -15,8 +15,6 @@ import os
 import pymongo
 import time
 import random
-import subprocess
-import re
 import undetected_chromedriver as uc
 from dotenv import load_dotenv
 
@@ -33,18 +31,6 @@ load_dotenv()
 #         options=options
 #     )
 
-def get_chrome_major_version():
-    """Detect the major version of Chrome actually installed on this runner."""
-    try:
-        output = subprocess.check_output(["google-chrome", "--version"]).decode()
-        match = re.search(r"(\d+)\.", output)
-        if match:
-            return int(match.group(1))
-    except Exception as e:
-        print(f"Could not determine Chrome version: {e}")
-    return None
-
-
 def init_driver():
     options = uc.ChromeOptions()
     options.add_argument("--disable-dev-shm-usage")
@@ -53,13 +39,11 @@ def init_driver():
         "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     )
-    chrome_major = get_chrome_major_version()
-    print(f"Detected installed Chrome major version: {chrome_major}")
     driver = uc.Chrome(
         options=options,
         headless=True,
         use_subprocess=True,
-        version_main=chrome_major,  # forces uc to fetch a matching chromedriver build
+        browser_executable_path="/usr/bin/google-chrome",  # force the exact installed binary
     )
     return driver
 
@@ -111,6 +95,8 @@ def create_document(data_row):
     return doc
 
 # Initialize WebDriver with headless mode
+import os
+print("Chrome binary exists at /usr/bin/google-chrome:", os.path.exists("/usr/bin/google-chrome"))
 driver = init_driver()
 driver.get("https://www.timeanddate.com/weather/india/new-delhi/hourly")
 time.sleep(random.uniform(3, 6))  # let any JS challenge resolve, look less robotic
