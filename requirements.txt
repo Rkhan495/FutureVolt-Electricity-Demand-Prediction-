@@ -6,6 +6,7 @@ pandas==2.2.1
 # Browser automation
 selenium==4.20.0
 webdriver-manager==4.0.1
+requests
 undetected-chromedriver
 
 # FastAPI dependencies
