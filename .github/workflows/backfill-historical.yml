@@ -26,6 +26,6 @@ jobs:
         pip install --no-cache-dir -r requirements.txt
 
     - name: Run historical backfill script
-      run: src/python backfill_historical.py
+      run: python src/backfill_historical.py
       env:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
