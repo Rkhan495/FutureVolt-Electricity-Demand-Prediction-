@@ -18,7 +18,7 @@ load_dotenv()
 # CONFIG
 # ---------------------------------------------------------------------------
 TARGET_DATE = "11-08-2026"   # format matches your DB: DD-MM-YYYY
-DRY_RUN = True                # set to False only after reviewing the counts below
+DRY_RUN = False                # set to False only after reviewing the counts below
 
 # ---------------------------------------------------------------------------
 mongodb_uri = os.getenv("MONGODB_URI")
