@@ -1,0 +1,39 @@
+name: One-Off Strip Stray Headers
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Python packages
+      run: |
+        pip install --upgrade pip
+        pip install pandas
+
+    - name: Run stray header cleanup
+      run: python src/strip_stray_headers.py
+
+    - name: Commit and push cleaned CSV
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add data/All_Data.csv
+        if ! git diff-index --quiet HEAD; then
+          git commit -m "Remove stray embedded header row(s) from All_Data.csv"
+          git push
+        else
+          echo "No changes to commit."
+        fi
