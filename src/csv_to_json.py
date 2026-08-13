@@ -1,4 +1,6 @@
 """
+csv_to_json.py
+
 Regenerates data/data.json directly from data/All_Data.csv, entirely inside
 the repo via GitHub Actions — no manual download/edit/upload needed, and no
 25MB upload-size problem since this runs server-side and commits the result
@@ -36,6 +38,14 @@ if not os.path.exists(CSV_PATH):
 
 df = pd.read_csv(CSV_PATH, header=None, names=COLUMNS, encoding="ISO-8859-1", low_memory=False)
 print(f"Loaded {len(df)} rows from {CSV_PATH}")
+
+# Defensive: strip any stray embedded header row(s) that may have gotten
+# saved into the data itself (e.g. from a manual Excel/Sheets edit)
+before = len(df)
+df = df[df["Date"] != "Date"].reset_index(drop=True)
+removed = before - len(df)
+if removed:
+    print(f"Removed {removed} stray embedded header row(s) found in the data.")
 
 
 def convert_types(row):
