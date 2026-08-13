@@ -35,7 +35,7 @@ MODEL_PATH = "model.pkl.gz"
 START_DATE = "2026-04-21"  # earliest date we care about checking
 LATITUDE = 28.6139
 LONGITUDE = 77.2090
-DRY_RUN = True  # set False only after reviewing the report below
+DRY_RUN = False  # set False only after reviewing the report below
 
 COLUMNS = [
     "Date", "Time", "Weekday", "Temperature", "Condition", "Humidity",
