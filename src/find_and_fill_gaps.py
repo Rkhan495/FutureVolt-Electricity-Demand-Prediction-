@@ -1,4 +1,6 @@
 """
+find_and_fill_gaps.py
+
 1. Scans data/All_Data.csv for missing dates/hours between START_DATE and
    yesterday (today's row isn't expected yet — the daily script only writes
    "tomorrow's" row the night before).
@@ -35,7 +37,7 @@ MODEL_PATH = "model.pkl.gz"
 START_DATE = "2026-04-21"  # earliest date we care about checking
 LATITUDE = 28.6139
 LONGITUDE = 77.2090
-DRY_RUN = False  # set False only after reviewing the report below
+DRY_RUN = True  # set False only after reviewing the report below
 
 COLUMNS = [
     "Date", "Time", "Weekday", "Temperature", "Condition", "Humidity",
@@ -130,13 +132,11 @@ def cyclic_encoding(value, max_value):
     return np.sin(2 * np.pi * value / max_value), np.cos(2 * np.pi * value / max_value)
 
 
-def fetch_weather(date_obj, use_forecast_api):
-    """Fetch one day's hourly weather. Uses forecast API (past_days) for
-    recent dates since archive API has a finalization lag."""
-    date_str = date_obj.strftime("%Y-%m-%d")
-
+def fetch_weather_range(start_date_obj, end_date_obj, use_forecast_api):
+    """Fetch a whole contiguous date range in ONE request instead of looping
+    day by day — far fewer network calls, far less prone to timeouts."""
     if use_forecast_api:
-        days_ago = (datetime.now().date() - date_obj).days
+        days_ago = (datetime.now().date() - start_date_obj).days
         url = "https://api.open-meteo.com/v1/forecast"
         params = {
             "latitude": LATITUDE, "longitude": LONGITUDE,
@@ -149,27 +149,48 @@ def fetch_weather(date_obj, use_forecast_api):
         url = "https://archive-api.open-meteo.com/v1/archive"
         params = {
             "latitude": LATITUDE, "longitude": LONGITUDE,
-            "start_date": date_str, "end_date": date_str,
+            "start_date": start_date_obj.strftime("%Y-%m-%d"),
+            "end_date": end_date_obj.strftime("%Y-%m-%d"),
             "hourly": "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code",
             "timezone": "Asia/Kolkata",
         }
 
-    resp = requests.get(url, params=params, timeout=60)
-    resp.raise_for_status()
-    data = resp.json()["hourly"]
+    last_error = None
+    for attempt in range(3):  # retry up to 3 times on timeout
+        try:
+            resp = requests.get(url, params=params, timeout=120)
+            resp.raise_for_status()
+            data = resp.json()["hourly"]
+            wdf = pd.DataFrame({
+                "datetime": pd.to_datetime(data["time"]),
+                "Temperature": data["temperature_2m"],
+                "Humidity": data["relative_humidity_2m"],
+                "Rainfall": data["precipitation"],
+                "Wind_Speed": data["wind_speed_10m"],
+                "weather_code": data["weather_code"],
+            })
+            wdf["Condition"] = wdf["weather_code"].map(WMO_CONDITION_MAP).fillna("Cloudy")
+            return wdf
+        except Exception as e:
+            last_error = e
+            print(f"  Attempt {attempt + 1} failed: {e}")
+    raise last_error
 
-    wdf = pd.DataFrame({
-        "datetime": pd.to_datetime(data["time"]),
-        "Temperature": data["temperature_2m"],
-        "Humidity": data["relative_humidity_2m"],
-        "Rainfall": data["precipitation"],
-        "Wind_Speed": data["wind_speed_10m"],
-        "weather_code": data["weather_code"],
-    })
-    wdf["Condition"] = wdf["weather_code"].map(WMO_CONDITION_MAP).fillna("Cloudy")
-    # Filter to just this date (forecast API may return neighboring hours)
-    wdf = wdf[wdf["datetime"].dt.date == date_obj]
-    return wdf
+
+def group_into_contiguous_ranges(dates):
+    """Turn a sorted list of dates into a list of (start, end) contiguous ranges."""
+    if not dates:
+        return []
+    ranges = []
+    range_start = dates[0]
+    prev = dates[0]
+    for d in dates[1:]:
+        if (d - prev).days > 1:
+            ranges.append((range_start, prev))
+            range_start = d
+        prev = d
+    ranges.append((range_start, prev))
+    return ranges
 
 
 # ---------------------------------------------------------------------------
@@ -179,102 +200,130 @@ RECENT_THRESHOLD_DAYS = 5  # use forecast API (past_days) within this window
 new_rows = []
 skipped_existing = 0
 
-for date_obj, hours_present in missing_dates:
-    days_ago = (datetime.now().date() - date_obj).days
-    use_forecast_api = days_ago <= RECENT_THRESHOLD_DAYS
+# Split missing dates into "recent" (forecast API) vs "older" (archive API)
+missing_date_objs = sorted([d for d, _ in missing_dates])
+today_date = datetime.now().date()
 
-    print(f"\nFetching {date_obj.strftime('%d-%m-%Y')} via {'forecast (past_days)' if use_forecast_api else 'archive'} API...")
+recent_dates = [d for d in missing_date_objs if (today_date - d).days <= RECENT_THRESHOLD_DAYS]
+older_dates = [d for d in missing_date_objs if (today_date - d).days > RECENT_THRESHOLD_DAYS]
+
+recent_ranges = group_into_contiguous_ranges(recent_dates)
+older_ranges = group_into_contiguous_ranges(older_dates)
+
+all_weather_frames = []
+
+for start, end in older_ranges:
+    print(f"\nFetching {start.strftime('%d-%m-%Y')} to {end.strftime('%d-%m-%Y')} via archive API (one request)...")
     try:
-        wdf = fetch_weather(date_obj, use_forecast_api)
+        wdf = fetch_weather_range(start, end, use_forecast_api=False)
+        all_weather_frames.append(wdf)
+        print(f"  Got {len(wdf)} hourly records.")
     except Exception as e:
-        print(f"  ERROR fetching {date_obj}: {e}")
+        print(f"  FAILED after retries: {e}")
+
+for start, end in recent_ranges:
+    print(f"\nFetching {start.strftime('%d-%m-%Y')} to {end.strftime('%d-%m-%Y')} via forecast (past_days) API (one request)...")
+    try:
+        wdf = fetch_weather_range(start, end, use_forecast_api=True)
+        # forecast API returns a fixed window — filter to just the dates we need
+        wdf = wdf[wdf["datetime"].dt.date.isin(recent_dates)]
+        all_weather_frames.append(wdf)
+        print(f"  Got {len(wdf)} hourly records.")
+    except Exception as e:
+        print(f"  FAILED after retries: {e}")
+
+if not all_weather_frames:
+    print("\nNo weather data could be fetched. Exiting.")
+    sys.exit(1)
+
+combined_weather = pd.concat(all_weather_frames, ignore_index=True)
+print(f"\nTotal hourly weather records fetched: {len(combined_weather)}")
+
+for _, row in combined_weather.iterrows():
+    dt = row["datetime"]
+    date_str = dt.strftime("%d-%m-%Y")
+    time_str = f"{dt.hour:02d}-00:{(dt.hour + 1) % 24:02d}:00"
+
+    if (date_str, time_str) in existing_pairs:
+        skipped_existing += 1
         continue
 
-    for _, row in wdf.iterrows():
-        dt = row["datetime"]
-        date_str = dt.strftime("%d-%m-%Y")
-        time_str = f"{dt.hour:02d}-00:{(dt.hour + 1) % 24:02d}:00"
+    day, month, year, hour = dt.day, dt.month, dt.year, dt.hour
+    weekday = dt.weekday()
+    day_of_year = dt.timetuple().tm_yday
 
-        if (date_str, time_str) in existing_pairs:
-            skipped_existing += 1
-            continue
+    matched_row = holiday_data_grouped[
+        (holiday_data_grouped["Day"] == day)
+        & (holiday_data_grouped["Month"] == month)
+        & (holiday_data_grouped["Year"] == year)
+    ]
+    if not matched_row.empty:
+        holiday = matched_row["Holiday"].values[0]
+        event = matched_row["Event"].values[0]
+    else:
+        holiday = 0
+        event = "No"
+        if weekday in [5, 6]:
+            holiday = 1
+            event = "Weekend"
 
-        day, month, year, hour = dt.day, dt.month, dt.year, dt.hour
-        weekday = dt.weekday()
-        day_of_year = dt.timetuple().tm_yday
+    month_start = f"{year}-{month:02d}-01"
+    monthly_solar = solar_data[solar_data["Date"] == month_start]
+    if monthly_solar.empty:
+        continue
+    last_day = calendar.monthrange(year, month)[1]
+    solar_generation = round(monthly_solar["Forecasted Solar Generation"].values[0], 2) / last_day
 
-        matched_row = holiday_data_grouped[
-            (holiday_data_grouped["Day"] == day)
-            & (holiday_data_grouped["Month"] == month)
-            & (holiday_data_grouped["Year"] == year)
-        ]
-        if not matched_row.empty:
-            holiday = matched_row["Holiday"].values[0]
-            event = matched_row["Event"].values[0]
-        else:
-            holiday = 0
-            event = "No"
-            if weekday in [5, 6]:
-                holiday = 1
-                event = "Weekend"
+    date_ts = pd.to_datetime(f"{year}-{month}-{day}")
+    quarter_mask = (real_estate_data["date"].dt.year == year) & (
+        real_estate_data["date"].dt.quarter == date_ts.quarter
+    )
+    qre = real_estate_data[quarter_mask]
+    if qre.empty:
+        continue
+    low_price = qre["low_price_pred"].values.item()
+    high_price = qre["high_price_pred"].values.item()
+    avg_price = qre["Average_Price"].values.item()
+    qoq_price = qre["QoQ_Price_Change_Percent"].values.item()
 
-        month_start = f"{year}-{month:02d}-01"
-        monthly_solar = solar_data[solar_data["Date"] == month_start]
-        if monthly_solar.empty:
-            continue
-        last_day = calendar.monthrange(year, month)[1]
-        solar_generation = round(monthly_solar["Forecasted Solar Generation"].values[0], 2) / last_day
+    hour_sin, hour_cos = cyclic_encoding(hour, 24)
+    weekday_sin, weekday_cos = cyclic_encoding(weekday, 7)
+    month_sin, month_cos = cyclic_encoding(month, 12)
+    dayofyear_sin, dayofyear_cos = cyclic_encoding(day_of_year, 365)
 
-        date_ts = pd.to_datetime(f"{year}-{month}-{day}")
-        quarter_mask = (real_estate_data["date"].dt.year == year) & (
-            real_estate_data["date"].dt.quarter == date_ts.quarter
-        )
-        qre = real_estate_data[quarter_mask]
-        if qre.empty:
-            continue
-        low_price = qre["low_price_pred"].values.item()
-        high_price = qre["high_price_pred"].values.item()
-        avg_price = qre["Average_Price"].values.item()
-        qoq_price = qre["QoQ_Price_Change_Percent"].values.item()
+    temp = round(float(row["Temperature"]), 2)
+    humidity = int(round(row["Humidity"]))
+    wind_speed = round(float(row["Wind_Speed"]), 2)
+    rain = round(float(row["Rainfall"]), 2)
+    condition = row["Condition"]
+    temp_x_hour = temp * hour
 
-        hour_sin, hour_cos = cyclic_encoding(hour, 24)
-        weekday_sin, weekday_cos = cyclic_encoding(weekday, 7)
-        month_sin, month_cos = cyclic_encoding(month, 12)
-        dayofyear_sin, dayofyear_cos = cyclic_encoding(day_of_year, 365)
+    features = pd.DataFrame({
+        "Weekday": [weekday], "Temperature": [temp], "Condition": [condition],
+        "Humidity": [humidity], "Wind_Speed": [wind_speed], "Holiday": [holiday],
+        "Event": [event], "Rainfall": [rain], "Solar_Generation": [round(solar_generation, 2)],
+        "low_price": [round(low_price, 2)], "high_price": [round(high_price, 2)],
+        "Average_Price_Rs_Per_Sqft": [round(avg_price, 2)],
+        "QoQ_Price_Change_Percent": [round(qoq_price, 2)], "Day": [day], "Month": [month],
+        "Year": [year], "DayOfYear": [day_of_year], "Hour": [hour], "Hour_sin": [hour_sin],
+        "Hour_cos": [hour_cos], "Weekday_sin": [weekday_sin], "Weekday_cos": [weekday_cos],
+        "Month_sin": [month_sin], "Month_cos": [month_cos], "DayOfYear_sin": [dayofyear_sin],
+        "DayOfYear_cos": [dayofyear_cos], "temp_x_hour": [temp_x_hour],
+    })
 
-        temp = round(float(row["Temperature"]), 2)
-        humidity = int(round(row["Humidity"]))
-        wind_speed = round(float(row["Wind_Speed"]), 2)
-        rain = round(float(row["Rainfall"]), 2)
-        condition = row["Condition"]
-        temp_x_hour = temp * hour
+    prediction = model.predict(features)
+    load = float(np.round(prediction, 3)[0])
 
-        features = pd.DataFrame({
-            "Weekday": [weekday], "Temperature": [temp], "Condition": [condition],
-            "Humidity": [humidity], "Wind_Speed": [wind_speed], "Holiday": [holiday],
-            "Event": [event], "Rainfall": [rain], "Solar_Generation": [round(solar_generation, 2)],
-            "low_price": [round(low_price, 2)], "high_price": [round(high_price, 2)],
-            "Average_Price_Rs_Per_Sqft": [round(avg_price, 2)],
-            "QoQ_Price_Change_Percent": [round(qoq_price, 2)], "Day": [day], "Month": [month],
-            "Year": [year], "DayOfYear": [day_of_year], "Hour": [hour], "Hour_sin": [hour_sin],
-            "Hour_cos": [hour_cos], "Weekday_sin": [weekday_sin], "Weekday_cos": [weekday_cos],
-            "Month_sin": [month_sin], "Month_cos": [month_cos], "DayOfYear_sin": [dayofyear_sin],
-            "DayOfYear_cos": [dayofyear_cos], "temp_x_hour": [temp_x_hour],
-        })
-
-        prediction = model.predict(features)
-        load = float(np.round(prediction, 3)[0])
-
-        new_rows.append({
-            "Date": date_str, "Time": time_str, "Weekday": calendar.day_name[weekday],
-            "Temperature": temp, "Condition": condition, "Humidity": humidity,
-            "Wind_Speed": wind_speed, "Holiday": holiday, "Event": event,
-            "Rainfall": rain, "Solar_Generation": round(solar_generation, 2),
-            "low_price": round(low_price, 2), "high_price": round(high_price, 2),
-            "Average_Price_Rs_Per_Sqft": round(avg_price, 2),
-            "QoQ_Price_Change_Percent": round(qoq_price, 2), "Load": load,
-            "BRPL": None, "BYPL": None, "NDPL": None, "NDMC": None, "MES": None,
-        })
+    new_rows.append({
+        "Date": date_str, "Time": time_str, "Weekday": calendar.day_name[weekday],
+        "Temperature": temp, "Condition": condition, "Humidity": humidity,
+        "Wind_Speed": wind_speed, "Holiday": holiday, "Event": event,
+        "Rainfall": rain, "Solar_Generation": round(solar_generation, 2),
+        "low_price": round(low_price, 2), "high_price": round(high_price, 2),
+        "Average_Price_Rs_Per_Sqft": round(avg_price, 2),
+        "QoQ_Price_Change_Percent": round(qoq_price, 2), "Load": load,
+        "BRPL": None, "BYPL": None, "NDPL": None, "NDMC": None, "MES": None,
+    })
 
 print(f"\nBuilt {len(new_rows)} new rows (skipped {skipped_existing} already-present hours).")
 
