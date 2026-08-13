@@ -19,7 +19,7 @@ from datetime import datetime
 import pandas as pd
 
 CSV_PATH = os.path.join("data", "All_Data.csv")
-DRY_RUN = True  # set to False only after reviewing the summary below
+DRY_RUN = False  # set to False only after reviewing the summary below
 
 COLUMNS = [
     "Date", "Time", "Weekday", "Temperature", "Condition", "Humidity",
