@@ -23,7 +23,7 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 CSV_PATH = os.path.join("data", "All_Data.csv")
 JSON_PATH = os.path.join("data", "data.json")
-DRY_RUN = True  # set to False only after reviewing the summary below
+DRY_RUN = False  # set to False only after reviewing the summary below
 
 DROP_COLUMNS_FOR_JSON = {
     "Rainfall", "Solar_Generation", "low_price", "high_price",
