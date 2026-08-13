@@ -37,7 +37,7 @@ MODEL_PATH = "model.pkl.gz"
 START_DATE = "2026-04-21"  # earliest date we care about checking
 LATITUDE = 28.6139
 LONGITUDE = 77.2090
-DRY_RUN = False  # set False only after reviewing the report below
+DRY_RUN = True  # set False only after reviewing the report below
 
 COLUMNS = [
     "Date", "Time", "Weekday", "Temperature", "Condition", "Humidity",
@@ -67,6 +67,14 @@ if not os.path.exists(CSV_PATH):
     sys.exit(1)
 
 df = pd.read_csv(CSV_PATH, header=None, names=COLUMNS, encoding="ISO-8859-1", low_memory=False)
+
+# Defensive: strip any stray embedded header row(s) that may have gotten
+# saved into the data itself (e.g. from a manual Excel/Sheets edit)
+before_count = len(df)
+df = df[df["Date"] != "Date"].reset_index(drop=True)
+if before_count - len(df):
+    print(f"Removed {before_count - len(df)} stray embedded header row(s) found in the data.")
+
 existing_pairs = set(zip(df["Date"], df["Time"]))
 existing_dates = set(df["Date"])
 
