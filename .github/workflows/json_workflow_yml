@@ -1,0 +1,39 @@
+name: Regenerate JSON from CSV
+
+on:
+  workflow_dispatch:  # manual trigger — also safe to run anytime you edit the CSV
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Python packages
+      run: |
+        pip install --upgrade pip
+        pip install pandas
+
+    - name: Regenerate data.json from All_Data.csv
+      run: python src/csv_to_json.py
+
+    - name: Commit and push updated JSON
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add data/data.json
+        if ! git diff-index --quiet HEAD; then
+          git commit -m "Regenerate data.json from All_Data.csv"
+          git push
+        else
+          echo "No changes to data.json — nothing to commit."
+        fi
