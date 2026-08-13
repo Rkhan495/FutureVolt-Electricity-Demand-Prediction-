@@ -21,7 +21,7 @@ jobs:
     - name: Install Python packages
       run: |
         pip install --upgrade pip
-        pip install pandas numpy requests scikit-learn
+        pip install --no-cache-dir -r requirements.txt
 
     - name: Run gap finder / backfill
       run: python src/find_and_fill_gaps.py
