@@ -1,4 +1,3 @@
-Date,Time,Weekday,Temperature,Condition,Humidity,Wind_Speed,Holiday,Event,Rainfall,Solar_Generation,low_price,high_price,Average_Price_Rs_Per_Sqft,QoQ_Price_Change_Percent,Load,BRPL,BYPL,NDPL,NDMC,MES
 01-01-2010,00:00-01:00,Friday,9,Fog,95,2,0,New Year's Day,0.00577957,0,2455,69885,12227.35955,1.547136051,0,0,0,0,0,0
 01-01-2010,01:00-02:00,Friday,9,Fog,95,2,0,New Year's Day,0.00577957,0,2455,69885,12227.35955,1.547136051,0,0,0,0,0,0
 01-01-2010,02:00-03:00,Friday,9,Fog,95,2,0,New Year's Day,0.00577957,0,2455,69885,12227.35955,1.547136051,0,0,0,0,0,0
