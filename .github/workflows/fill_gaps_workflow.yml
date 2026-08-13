@@ -1,0 +1,39 @@
+name: One-Off Find and Fill CSV Gaps
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fill-gaps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Python packages
+      run: |
+        pip install --upgrade pip
+        pip install pandas numpy requests scikit-learn
+
+    - name: Run gap finder / backfill
+      run: python src/find_and_fill_gaps.py
+
+    - name: Commit and push updated CSV
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add data/All_Data.csv
+        if ! git diff-index --quiet HEAD; then
+          git commit -m "Backfill missing CSV rows via Open-Meteo"
+          git push
+        else
+          echo "No changes to commit."
+        fi
