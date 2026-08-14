@@ -1,0 +1,31 @@
+name: One-Off Cleanup Duplicates
+ 
+on:
+  workflow_dispatch:  # manual trigger only — no schedule
+ 
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+ 
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        lfs: false
+ 
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+ 
+    - name: Install Python packages
+      run: |
+        pip install --upgrade pip
+        pip install pymongo python-dotenv
+ 
+    - name: Run cleanup script
+      run: python src/cleanup_duplicates.py
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
