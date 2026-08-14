@@ -1,0 +1,29 @@
+name: One-Off Sync CSV Dates to MongoDB
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Python packages
+      run: |
+        pip install --upgrade pip
+        pip install pandas pymongo python-dotenv
+
+    - name: Run CSV -> MongoDB date sync
+      run: python src/sync_csv_dates_to_mongo.py
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
