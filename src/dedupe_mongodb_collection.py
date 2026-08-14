@@ -27,7 +27,7 @@ load_dotenv()
 # actually reads for the page/chart showing duplicates.
 # ---------------------------------------------------------------------------
 COLLECTION_NAME = "data"  # e.g. "data" or "FutureData" — confirm which one
-DRY_RUN = True
+DRY_RUN = False
 
 # ---------------------------------------------------------------------------
 mongodb_uri = os.getenv("MONGODB_URI")
