@@ -1,0 +1,29 @@
+name: One-Off Dedupe MongoDB Collection
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dedupe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Python packages
+      run: |
+        pip install --upgrade pip
+        pip install pymongo python-dotenv
+
+    - name: Run MongoDB dedupe
+      run: python src/dedupe_mongodb_collection.py
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
