@@ -31,7 +31,7 @@ load_dotenv()
 TARGET_DATES = ["12-08-2026"]
 CSV_PATH = os.path.join("data", "All_Data.csv")
 COLLECTION_NAME = "data"
-DRY_RUN = True
+DRY_RUN = False
 
 COLUMNS = [
     "Date", "Time", "Weekday", "Temperature", "Condition", "Humidity",
