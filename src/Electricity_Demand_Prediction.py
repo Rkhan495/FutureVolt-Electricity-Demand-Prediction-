@@ -109,10 +109,17 @@ collection = db["FutureData"]
 # before, instead of losing its data entirely.
 
 
-def replace_date_documents(date_str, documents):
-    collection.delete_many({"Date": date_str})
-    if documents:
-        collection.insert_many(documents)
+def upsert_date_documents(date_str, documents):
+    """Upsert each (Date, Time) document individually — never deletes the
+    whole date first. This means hours not covered by the current scrape
+    (e.g. already-elapsed hours of "today" that timeanddate.com no longer
+    shows) are left completely untouched, instead of being wiped."""
+    for doc in documents:
+        collection.update_one(
+            {"Date": doc["Date"], "Time": doc["Time"]},
+            {"$set": doc},
+            upsert=True,
+        )
 
 
 def create_document(data_row):
@@ -362,7 +369,7 @@ for hd in date_links:
         print(f"No usable rows extracted for {hd} — skipping (existing data, if any, preserved).")
         continue
 
-    replace_date_documents(date_str, date_documents)
+    upsert_date_documents(date_str, date_documents)
     successfully_scraped_dates.add(date_str)
     print(f"Upserted {len(date_documents)} hours for {date_str} into FutureData.")
 
@@ -378,8 +385,12 @@ for hd in date_links:
         df_rows.to_csv(csv_file, index=False, mode='a', header=False)
         print(f"Appended {len(df_rows)} rows for tomorrow ({date_str}) to All_Data.csv.")
 
-        db.data.delete_many({"Date": date_str})
-        db.data.insert_many(date_documents)
+        for doc in date_documents:
+            db.data.update_one(
+                {"Date": doc["Date"], "Time": doc["Time"]},
+                {"$set": doc},
+                upsert=True,
+            )
 
 driver.quit()
 
@@ -461,9 +472,13 @@ if tomorrow_count < 24:
             })
 
         if fallback_docs:
-            replace_date_documents(tomorrow_date_str, fallback_docs)
-            db.data.delete_many({"Date": tomorrow_date_str})
-            db.data.insert_many(fallback_docs)
+            upsert_date_documents(tomorrow_date_str, fallback_docs)
+            for doc in fallback_docs:
+                db.data.update_one(
+                    {"Date": doc["Date"], "Time": doc["Time"]},
+                    {"$set": doc},
+                    upsert=True,
+                )
             print(f"Fallback: filled {len(fallback_docs)} hours for {tomorrow_date_str} via Open-Meteo.")
 
             if tomorrow_date_str not in successfully_scraped_dates:
