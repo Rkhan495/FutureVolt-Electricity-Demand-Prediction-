@@ -1,0 +1,41 @@
+name: One-Off Sync MongoDB Dates to CSV
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Python packages
+      run: |
+        pip install --upgrade pip
+        pip install pandas pymongo python-dotenv
+
+    - name: Run MongoDB -> CSV date sync
+      run: python src/sync_mongo_dates_to_csv.py
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+
+    - name: Commit and push updated CSV
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add data/All_Data.csv
+        if ! git diff-index --quiet HEAD; then
+          git commit -m "Sync MongoDB dates back into All_Data.csv"
+          git push
+        else
+          echo "No changes to commit."
+        fi
