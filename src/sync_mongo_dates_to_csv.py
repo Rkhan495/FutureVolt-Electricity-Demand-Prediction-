@@ -32,7 +32,7 @@ RAINFALL_PATH = "rainfall_data_forecast.csv"
 SOLAR_PATH = "solar_data_forecast.csv"
 REAL_ESTATE_PATH = "real_estate_price_forecast.csv"
 COLLECTION_NAME = "data"
-DRY_RUN = True
+DRY_RUN = False
 
 COLUMNS = [
     "Date", "Time", "Weekday", "Temperature", "Condition", "Humidity",
