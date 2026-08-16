@@ -7,10 +7,10 @@ cases where Mongo has data that the CSV backup is missing.
 
 Note: MongoDB documents only store Date, Time, Weekday, Temperature,
 Condition, Humidity, Wind_Speed, Holiday, Event, Load — NOT Rainfall,
-Solar_Generation, or real-estate fields. This script reconstructs
-Solar_Generation and real-estate values from your existing forecast CSVs
-(deterministic, date-based lookups), and defaults Rainfall to 0.0 since
-the true scraped rain value was never stored in MongoDB.
+Solar_Generation, or real-estate fields. This script reconstructs those
+from your existing forecast CSVs (deterministic, date-based lookups):
+monthly forecast totals divided by days-in-month, same pattern used for
+Solar_Generation and Rainfall elsewhere in the pipeline.
 
 Skips (Date, Time) pairs already present in the CSV — safe to re-run.
 Dry-run first; only writes if DRY_RUN is False.
@@ -32,7 +32,7 @@ RAINFALL_PATH = "rainfall_data_forecast.csv"
 SOLAR_PATH = "solar_data_forecast.csv"
 REAL_ESTATE_PATH = "real_estate_price_forecast.csv"
 COLLECTION_NAME = "data"
-DRY_RUN = False
+DRY_RUN = True  # confirm all three lookups succeed before flipping to False
 
 COLUMNS = [
     "Date", "Time", "Weekday", "Temperature", "Condition", "Humidity",
@@ -62,22 +62,48 @@ existing_df = pd.read_csv(CSV_PATH, header=None, names=COLUMNS, encoding="ISO-88
 existing_df = existing_df[existing_df["Date"] != "Date"].reset_index(drop=True)
 existing_pairs = set(zip(existing_df["Date"], existing_df["Time"]))
 
+for path, label in [(RAINFALL_PATH, "rainfall"), (SOLAR_PATH, "solar"), (REAL_ESTATE_PATH, "real estate")]:
+    if not os.path.exists(path):
+        print(f"ERROR: {label} file not found: {os.path.abspath(path)}")
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"Files in CWD: {os.listdir('.')}")
+        sys.exit(1)
+
 rainfall_data = pd.read_csv(RAINFALL_PATH)
+rainfall_data["Date"] = pd.to_datetime(rainfall_data["Date"], dayfirst=True)
 solar_data = pd.read_csv(SOLAR_PATH)
+solar_data["Date"] = pd.to_datetime(solar_data["Date"], dayfirst=True)
 real_estate_data = pd.read_csv(REAL_ESTATE_PATH)
 real_estate_data["date"] = pd.to_datetime(real_estate_data["date"], dayfirst=True)
 
+print(f"\n[DEBUG] Loaded rainfall_data: {len(rainfall_data)} rows from {os.path.abspath(RAINFALL_PATH)}")
+print(f"[DEBUG] rainfall_data columns: {list(rainfall_data.columns)}")
+print(f"[DEBUG] rainfall_data 'Date' sample (parsed): {rainfall_data['Date'].head(5).tolist()}")
+
+print(f"\n[DEBUG] Loaded solar_data: {len(solar_data)} rows from {os.path.abspath(SOLAR_PATH)}")
+print(f"[DEBUG] solar_data columns: {list(solar_data.columns)}")
+print(f"[DEBUG] solar_data 'Date' sample (parsed): {solar_data['Date'].head(5).tolist()}")
+
+print(f"\n[DEBUG] Loaded real_estate_data: {len(real_estate_data)} rows from {os.path.abspath(REAL_ESTATE_PATH)}")
+print(f"[DEBUG] real_estate_data columns: {list(real_estate_data.columns)}")
+print(f"[DEBUG] real_estate_data 'date' sample values: {real_estate_data['date'].head(5).tolist()}")
+
+
 def get_rainfall(year, month):
-    month_start = f"{year}-{month:02d}-01"
-    monthly = rainfall_data[rainfall_data["Date"] == month_start]
+    """Monthly forecast total (mm) divided by days-in-month -> per-day estimate."""
+    print(f"[DEBUG] Looking up rainfall_data where year == {year} and month == {month}")
+    monthly = rainfall_data[(rainfall_data["Date"].dt.year == year) & (rainfall_data["Date"].dt.month == month)]
+    print(f"[DEBUG] Matches found: {len(monthly)}")
     if monthly.empty:
         return None
     last_day = calendar.monthrange(year, month)[1]
-    return round(monthly["Forecasted Rainfall"].values[0], 2) / last_day
+    return round(monthly["Rainfall"].values[0], 2) / last_day
+
 
 def get_solar_generation(year, month):
-    month_start = f"{year}-{month:02d}-01"
-    monthly = solar_data[solar_data["Date"] == month_start]
+    print(f"[DEBUG] Looking up solar_data where year == {year} and month == {month}")
+    monthly = solar_data[(solar_data["Date"].dt.year == year) & (solar_data["Date"].dt.month == month)]
+    print(f"[DEBUG] Matches found: {len(monthly)}")
     if monthly.empty:
         return None
     last_day = calendar.monthrange(year, month)[1]
@@ -85,8 +111,10 @@ def get_solar_generation(year, month):
 
 
 def get_real_estate(year, date_ts):
+    print(f"[DEBUG] Looking up real_estate_data where year == {year} and quarter == {date_ts.quarter}")
     mask = (real_estate_data["date"].dt.year == year) & (real_estate_data["date"].dt.quarter == date_ts.quarter)
     q = real_estate_data[mask]
+    print(f"[DEBUG] Matches found: {len(q)}")
     if q.empty:
         return None
     return (
@@ -108,8 +136,7 @@ for target_date in TARGET_DATES:
 
     already_in_csv = sum(1 for doc in mongo_docs if (doc["Date"], doc["Time"]) in existing_pairs)
     print(f"Already present in CSV: {already_in_csv}")
-    to_add = len(mongo_docs) - already_in_csv
-    print(f"Would be added to CSV: {to_add}")
+    print(f"Would be added to CSV: {len(mongo_docs) - already_in_csv}")
 
     if not mongo_docs:
         print(f"No MongoDB data for {target_date} — nothing to sync.")
@@ -120,8 +147,14 @@ for target_date in TARGET_DATES:
     solar_generation = get_solar_generation(year, month)
     real_estate = get_real_estate(year, date_ts)
 
-    if solar_generation is None or real_estate is None or rainfall is None:
-        print(f"WARNING: missing solar/real-estate/rainfall reference data for {target_date} — skipping this date.")
+    if rainfall is None:
+        print(f"WARNING: no rainfall forecast data found for {target_date} — skipping this date.")
+        continue
+    if solar_generation is None:
+        print(f"WARNING: no solar generation data found for {target_date} — skipping this date.")
+        continue
+    if real_estate is None:
+        print(f"WARNING: no real-estate forecast data found for {target_date} — skipping this date.")
         continue
 
     low_price, high_price, avg_price, qoq_price = real_estate
@@ -146,14 +179,14 @@ for target_date in TARGET_DATES:
 print(f"\nTotal new rows to append across all target dates: {len(all_new_rows)}")
 
 if not all_new_rows:
-    print("Nothing to add. CSV already has everything MongoDB has for these dates.")
+    print("Nothing to add. CSV already has everything MongoDB has for these dates (or a lookup failed above).")
     sys.exit(0)
 
 if DRY_RUN:
     print("\nDRY_RUN is True — no changes made.")
     print("Sample of rows that would be added (up to 3):")
     for r in all_new_rows[:3]:
-        print(f"  {r['Date']} {r['Time']} Load={r['Load']} (Rainfall defaulted to 0.0)")
+        print(f"  {r['Date']} {r['Time']} Load={r['Load']} Rainfall={r['Rainfall']}")
     print("\nReview above. If correct, set DRY_RUN = False and re-run.")
     sys.exit(0)
 
