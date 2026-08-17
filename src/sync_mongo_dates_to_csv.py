@@ -19,6 +19,7 @@ Dry-run first; only writes if DRY_RUN is False.
 import os
 import sys
 import calendar
+import subprocess
 import pandas as pd
 import pymongo
 from dotenv import load_dotenv
@@ -70,11 +71,11 @@ for path, label in [(RAINFALL_PATH, "rainfall"), (SOLAR_PATH, "solar"), (REAL_ES
         sys.exit(1)
 
 rainfall_data = pd.read_csv(RAINFALL_PATH)
-rainfall_data["Date"] = pd.to_datetime(rainfall_data["Date"], dayfirst=True)
+rainfall_data["Date"] = pd.to_datetime(rainfall_data["Date"], format="%d-%m-%Y")  # confirmed DD-MM-YYYY
 solar_data = pd.read_csv(SOLAR_PATH)
-solar_data["Date"] = pd.to_datetime(solar_data["Date"], dayfirst=True)
+solar_data["Date"] = pd.to_datetime(solar_data["Date"], format="%Y-%m-%d")  # confirmed YYYY-MM-DD
 real_estate_data = pd.read_csv(REAL_ESTATE_PATH)
-real_estate_data["date"] = pd.to_datetime(real_estate_data["date"], dayfirst=True)
+real_estate_data["date"] = pd.to_datetime(real_estate_data["date"], format="%d-%m-%Y")  # confirmed DD-MM-YYYY
 
 print(f"\n[DEBUG] Loaded rainfall_data: {len(rainfall_data)} rows from {os.path.abspath(RAINFALL_PATH)}")
 print(f"[DEBUG] rainfall_data columns: {list(rainfall_data.columns)}")
@@ -82,7 +83,14 @@ print(f"[DEBUG] rainfall_data 'Date' sample (parsed): {rainfall_data['Date'].hea
 
 print(f"\n[DEBUG] Loaded solar_data: {len(solar_data)} rows from {os.path.abspath(SOLAR_PATH)}")
 print(f"[DEBUG] solar_data columns: {list(solar_data.columns)}")
-print(f"[DEBUG] solar_data 'Date' sample (parsed): {solar_data['Date'].head(5).tolist()}")
+print(f"[DEBUG] solar_data 'Date' FULL list: {solar_data['Date'].tolist()}")
+try:
+    branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode().strip()
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
+    print(f"[DEBUG] Current git branch: {branch}")
+    print(f"[DEBUG] Current git commit: {commit}")
+except Exception as e:
+    print(f"[DEBUG] Could not determine git branch/commit: {e}")
 
 print(f"\n[DEBUG] Loaded real_estate_data: {len(real_estate_data)} rows from {os.path.abspath(REAL_ESTATE_PATH)}")
 print(f"[DEBUG] real_estate_data columns: {list(real_estate_data.columns)}")
