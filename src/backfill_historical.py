@@ -29,8 +29,8 @@ load_dotenv()
 # ---------------------------------------------------------------------------
 # CONFIG — edit these two dates if you need a different backfill range
 # ---------------------------------------------------------------------------
-START_DATE = "2026-04-20"
-END_DATE = "2026-08-10"
+START_DATE = "2026-08-14"
+END_DATE = "2026-08-15"
 LATITUDE = 28.6139   # New Delhi
 LONGITUDE = 77.2090
 
