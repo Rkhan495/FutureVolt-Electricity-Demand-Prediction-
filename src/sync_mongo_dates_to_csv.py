@@ -27,7 +27,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ---------------------------------------------------------------------------
-TARGET_DATES = ["13-08-2026"]
+TARGET_DATES = ["15-08-2026"]
 CSV_PATH = os.path.join("data", "All_Data.csv")
 RAINFALL_PATH = "rainfall_data_forecast.csv"
 SOLAR_PATH = "solar_data_forecast.csv"
