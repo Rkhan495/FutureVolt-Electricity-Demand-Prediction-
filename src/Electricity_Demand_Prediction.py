@@ -1,12 +1,20 @@
+"""
+Electricity_Demand_Prediction.py (v3 — Open-Meteo based, no browser/Selenium)
+
+Replaces the timeanddate.com Selenium scraper entirely with Open-Meteo's
+free forecast API. This removes the Cloudflare bot-detection arms race,
+Chrome/chromedriver version mismatches, and "table not found" failures
+that repeatedly broke the scraper-based version.
+
+Fetches ~8 days of hourly forecast (today through +7 days), builds the
+same feature set used in training, predicts Load via the existing model,
+and upserts into MongoDB (per-hour, never wiping a whole date) plus
+writes "tomorrow" into All_Data.csv the same way the old script did.
+"""
+
 import sys
-import time
-import requests
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
-from datetime import datetime, timedelta
 import calendar
+import requests
 import pandas as pd
 import numpy as np
 import gzip
@@ -14,13 +22,14 @@ import pickle
 import json
 import os
 import pymongo
-import undetected_chromedriver as uc
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
 
 LATITUDE = 28.6139
 LONGITUDE = 77.2090
+FORECAST_DAYS = 8  # today + next 7 days
 
 WMO_CONDITION_MAP = {
     0: "Sunny", 1: "Mostly Sunny", 2: "Partly Cloudy", 3: "Cloudy",
@@ -35,56 +44,9 @@ WMO_CONDITION_MAP = {
     95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm",
 }
 
-
-import subprocess
-import re
-
-
-def get_chrome_major_version():
-    """Detect the exact major version of Chrome actually installed on this
-    runner, so we can force undetected_chromedriver to fetch a matching
-    chromedriver build instead of letting it guess (which has been wrong
-    twice now when Chrome auto-updates)."""
-    try:
-        output = subprocess.check_output(["/usr/bin/google-chrome", "--version"]).decode()
-        match = re.search(r"(\d+)\.", output)
-        if match:
-            return int(match.group(1))
-    except Exception as e:
-        print(f"Could not determine Chrome version: {e}")
-    return None
-
-
-def init_driver():
-    options = uc.ChromeOptions()
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--no-sandbox")
-    options.add_argument(
-        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    )
-    print("Chrome binary exists at /usr/bin/google-chrome:", os.path.exists("/usr/bin/google-chrome"))
-    chrome_major = get_chrome_major_version()
-    print(f"Detected installed Chrome major version: {chrome_major}")
-
-    last_error = None
-    for attempt in range(2):
-        try:
-            driver = uc.Chrome(
-                options=options,
-                headless=True,
-                use_subprocess=True,
-                browser_executable_path="/usr/bin/google-chrome",
-                version_main=chrome_major,
-            )
-            return driver
-        except Exception as e:
-            last_error = e
-            print(f"Chrome init attempt {attempt + 1} failed: {e}")
-            time.sleep(5)
-    raise last_error
-
-
+# ---------------------------------------------------------------------------
+# MongoDB connection
+# ---------------------------------------------------------------------------
 try:
     mongodb_uri = os.getenv("MONGODB_URI")
     if not mongodb_uri:
@@ -103,17 +65,10 @@ except Exception as e:
 db = client.FutureVolt
 collection = db["FutureData"]
 
-# NOTE: No upfront wipe of the whole collection anymore. Each date's
-# documents only get replaced once we've actually got fresh data for that
-# specific date. A date that fails to scrape today keeps whatever it had
-# before, instead of losing its data entirely.
 
-
-def upsert_date_documents(date_str, documents):
-    """Upsert each (Date, Time) document individually — never deletes the
-    whole date first. This means hours not covered by the current scrape
-    (e.g. already-elapsed hours of "today" that timeanddate.com no longer
-    shows) are left completely untouched, instead of being wiped."""
+def upsert_date_documents(documents):
+    """Per-(Date, Time) upsert — never deletes a whole date, so partial
+    updates never wipe previously-good hours for that date."""
     for doc in documents:
         collection.update_one(
             {"Date": doc["Date"], "Time": doc["Time"]},
@@ -137,22 +92,26 @@ def create_document(data_row):
     }
 
 
-holiday_data_path = os.path.join("data", "Holidays.csv")
-holiday_data = pd.read_csv(holiday_data_path)
-solar_data_path = os.path.join("solar_data_forecast.csv")
-solar_data = pd.read_csv(solar_data_path)
-real_estate_data_path = os.path.join("real_estate_price_forecast.csv")
-real_estate_data = pd.read_csv(real_estate_data_path)
-real_estate_data['date'] = pd.to_datetime(real_estate_data['date'], dayfirst=True)
+# ---------------------------------------------------------------------------
+# Load supporting data + model
+# ---------------------------------------------------------------------------
+holiday_data = pd.read_csv(os.path.join("data", "Holidays.csv"))
+solar_data = pd.read_csv("solar_data_forecast.csv")
+solar_data['Date'] = pd.to_datetime(solar_data['Date'], format="%Y-%m-%d")
+real_estate_data = pd.read_csv("real_estate_price_forecast.csv")
+real_estate_data['date'] = pd.to_datetime(real_estate_data['date'], format="%d-%m-%Y")
+
 with gzip.open('model.pkl.gz', 'rb') as f:
     model = pickle.load(f)
 
 csv_file = os.path.join("data", "All_Data.csv")
 json_file = os.path.join("data", "data.json")
-file_path = os.path.join("data", "Forecast_Data.csv")
 
-if os.path.exists(file_path):
-    os.remove(file_path)
+CSV_COLUMNS = [
+    'Date', 'Time', "Weekday", "Temperature", "Condition", "Humidity", "Wind_Speed", "Holiday", "Event",
+    "Rainfall", "Solar_Generation", "low_price", "high_price", "Average_Price_Rs_Per_Sqft",
+    "QoQ_Price_Change_Percent", 'Load', 'BRPL', 'BYPL', 'NDPL', 'NDMC', 'MES'
+]
 
 
 def unique_event_concat(events):
@@ -191,17 +150,16 @@ def get_holiday_event(day, month, year, weekday):
 
 
 def get_solar_generation(year, month):
-    month_start = f"{year}-{month:02d}-01"
-    monthly_solar_data = solar_data[solar_data['Date'] == month_start]
-    if monthly_solar_data.empty:
+    monthly = solar_data[(solar_data['Date'].dt.year == year) & (solar_data['Date'].dt.month == month)]
+    if monthly.empty:
         return None
     last_day = calendar.monthrange(year, month)[1]
-    return round(monthly_solar_data['Forecasted Solar Generation'].values[0], 2) / last_day
+    return round(monthly['Forecasted Solar Generation'].values[0], 2) / last_day
 
 
-def get_real_estate(year, date):
-    quarter_mask = (real_estate_data['date'].dt.year == year) & (real_estate_data['date'].dt.quarter == date.quarter)
-    q = real_estate_data[quarter_mask]
+def get_real_estate(year, date_ts):
+    mask = (real_estate_data['date'].dt.year == year) & (real_estate_data['date'].dt.quarter == date_ts.quarter)
+    q = real_estate_data[mask]
     if q.empty:
         return None
     return (
@@ -236,128 +194,106 @@ def predict_load(weekday, temp, condition, humidity, wind_speed, holiday, event,
     return np.round(prediction, 3)[0]
 
 
-driver = init_driver()
-driver.get("https://www.timeanddate.com/weather/india/new-delhi/hourly")
-time.sleep(3)
+# ---------------------------------------------------------------------------
+# Fetch forecast from Open-Meteo (replaces Selenium scraping entirely)
+# ---------------------------------------------------------------------------
+print(f"Fetching {FORECAST_DAYS}-day hourly forecast from Open-Meteo...")
 
-print(f"Page title: {driver.title}")
-print(f"Page source snippet: {driver.page_source[:1000]}")
+om_url = "https://api.open-meteo.com/v1/forecast"
+om_params = {
+    "latitude": LATITUDE, "longitude": LONGITUDE,
+    "forecast_days": FORECAST_DAYS,
+    "hourly": "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code",
+    "timezone": "Asia/Kolkata",
+}
 
-elements = driver.find_elements(By.XPATH, "//a[contains(@href, '/weather/india/new-delhi/hourly?hd=')]")
-print(f"Found {len(elements)} date-link elements")
+last_error = None
+om_data = None
+for attempt in range(3):
+    try:
+        resp = requests.get(om_url, params=om_params, timeout=60)
+        resp.raise_for_status()
+        om_data = resp.json()
+        break
+    except Exception as e:
+        last_error = e
+        print(f"Open-Meteo attempt {attempt + 1} failed: {e}")
 
-date_links = []
-for elem in elements:
-    href = elem.get_attribute("href")
-    hd_param = href.split("hd=")[-1]
-    date_links.append(hd_param)
-
-print(f"date_links: {date_links}")
-
-if not date_links:
-    print("WARNING: No date links found — site may be blocking automated access. Exiting without changes.")
-    driver.quit()
+if om_data is None:
+    print(f"ERROR: Could not fetch forecast from Open-Meteo after 3 attempts: {last_error}")
     sys.exit(1)
 
-successfully_scraped_dates = set()
+hourly = om_data["hourly"]
+weather_df = pd.DataFrame({
+    "datetime": pd.to_datetime(hourly["time"]),
+    "Temperature": hourly["temperature_2m"],
+    "Humidity": hourly["relative_humidity_2m"],
+    "Rainfall": hourly["precipitation"],
+    "Wind_Speed": hourly["wind_speed_10m"],
+    "weather_code": hourly["weather_code"],
+})
+weather_df["Condition"] = weather_df["weather_code"].map(WMO_CONDITION_MAP).fillna("Cloudy")
+print(f"Fetched {len(weather_df)} hourly records covering {weather_df['datetime'].dt.date.nunique()} days.")
 
-for hd in date_links:
-    url = f"https://www.timeanddate.com/weather/india/new-delhi/hourly?hd={hd}"
-    driver.get(url)
+# ---------------------------------------------------------------------------
+# Build documents per date, upsert into Mongo, write "tomorrow" to CSV
+# ---------------------------------------------------------------------------
+today = datetime.now()
+tomorrow_date_obj = (today + timedelta(days=1)).date()
 
-    try:
-        table = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, "wt-hbh")))
-    except TimeoutException:
-        print(f"Table not found for {hd} after explicit wait — retrying once...")
-        time.sleep(3)
-        try:
-            table = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, "wt-hbh")))
-        except TimeoutException:
-            print(f"Table still not found for {hd} after retry — skipping (existing data, if any, preserved).")
-            continue
+by_date = {}
+for _, row in weather_df.iterrows():
+    dt = row["datetime"]
+    date_str = dt.strftime("%d-%m-%Y")
+    by_date.setdefault(date_str, []).append(row)
 
-    year = int(hd[:4])
-    day = int(hd[6:8])
-    month = int(hd[4:6])
+successfully_processed_dates = set()
+tomorrow_csv_rows = []
+
+for date_str, rows in by_date.items():
+    day, month, year = map(int, date_str.split("-"))
     full_date = datetime(year, month, day)
     weekday = full_date.weekday()
     day_of_year = full_date.timetuple().tm_yday
-    date_str = f"{day:02d}-{month:02d}-{year}"
+    date_ts = pd.to_datetime(f"{year}-{month}-{day}")
 
-    rows = table.find_elements(By.TAG_NAME, "tr")[2:]
+    solar_generation = get_solar_generation(year, month)
+    real_estate = get_real_estate(year, date_ts)
+    if solar_generation is None or real_estate is None:
+        print(f"Skipping {date_str}: missing solar/real-estate reference data.")
+        continue
+    low_price, high_price, avg_price, qoq_price = real_estate
+
     date_documents = []
-    date_data_rows = []
+    date_csv_rows = []
 
     for row in rows:
-        cols = row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")
-        if len(cols) < 10:
-            continue
-
-        time_cell = cols[0].text.strip()
-        hour_part = time_cell.split("\n", 1)[0] if "\n" in time_cell else time_cell
-
-        if 'pm' in hour_part and '12:' not in hour_part:
-            hour = int(hour_part.split(":")[0]) + 12
-        elif 'am' in hour_part and '12:' in hour_part:
-            hour = 0
-        else:
-            hour = int(hour_part.split(":")[0])
-
-        temp_text = cols[2].text.strip()
-        if '°F' in temp_text:
-            temp = (int(temp_text.replace("°F", "").strip()) - 32) * 5 / 9
-        elif '°C' in temp_text:
-            temp = int(temp_text.replace("°C", "").strip())
-        else:
-            continue
-
-        condition = cols[3].text.strip().rstrip('.')
-
-        def parse_measurement(text, units):
-            for unit in units:
-                if unit in text:
-                    value = text.replace(unit, "").strip()
-                    try:
-                        return float(value)
-                    except ValueError:
-                        return None
-            return None
-
-        wind_speed = parse_measurement(cols[5].text.strip(), ["km/h", "mph"])
-        wind_speed = round(wind_speed, 2) if wind_speed is not None else 0
-
-        humidity = int(cols[7].text.replace("%", "").strip())
+        dt = row["datetime"]
+        hour = dt.hour
         holiday, event = get_holiday_event(day, month, year, weekday)
 
-        rain_text = cols[9].text.replace('mm (rain)', '').strip()
-        rain = float(rain_text) if rain_text.replace('.', '', 1).isdigit() else 0.0
-
-        date_ts = pd.to_datetime(f"{year}-{month}-{day}")
-        solar_generation = get_solar_generation(year, month)
-        real_estate = get_real_estate(year, date_ts)
-        if solar_generation is None or real_estate is None:
-            continue
-        low_price, high_price, avg_price, qoq_price = real_estate
+        temp = round(float(row["Temperature"]), 2)
+        humidity = int(round(row["Humidity"]))
+        wind_speed = round(float(row["Wind_Speed"]), 2)
+        rain = round(float(row["Rainfall"]), 2)
+        condition = row["Condition"]
 
         load = predict_load(weekday, temp, condition, humidity, wind_speed, holiday, event, rain,
                              solar_generation, low_price, high_price, avg_price, qoq_price,
                              day, month, year, day_of_year, hour)
 
-        hour_24 = hour % 24
-        hour_new = f"{hour_24:02d}"
-        hour_next = f"{(hour_24 + 1) % 24:02d}"
-        time_str = f"{hour_new}-00:{hour_next}:00"
+        time_str = f"{hour:02d}-00:{(hour + 1) % 24:02d}:00"
 
         doc = create_document({
             'Date': date_str, 'Time': time_str, 'Weekday': calendar.day_name[weekday],
-            'Temperature': round(temp, 2), 'Condition': condition, 'Humidity': humidity,
+            'Temperature': temp, 'Condition': condition, 'Humidity': humidity,
             'Wind_Speed': wind_speed, 'Holiday': holiday, 'Event': event, 'Load': load,
         })
         date_documents.append(doc)
 
-        date_data_rows.append({
+        date_csv_rows.append({
             'Date': date_str, 'Time': time_str, "Weekday": calendar.day_name[weekday],
-            "Temperature": round(temp, 2), "Condition": condition, "Humidity": humidity,
+            "Temperature": temp, "Condition": condition, "Humidity": humidity,
             "Wind_Speed": wind_speed, "Holiday": holiday, "Event": event, "Rainfall": rain,
             "Solar_Generation": round(solar_generation, 2), "low_price": round(low_price, 2),
             "high_price": round(high_price, 2), "Average_Price_Rs_Per_Sqft": round(avg_price, 2),
@@ -366,25 +302,14 @@ for hd in date_links:
         })
 
     if not date_documents:
-        print(f"No usable rows extracted for {hd} — skipping (existing data, if any, preserved).")
         continue
 
-    upsert_date_documents(date_str, date_documents)
-    successfully_scraped_dates.add(date_str)
+    upsert_date_documents(date_documents)
+    successfully_processed_dates.add(date_str)
     print(f"Upserted {len(date_documents)} hours for {date_str} into FutureData.")
 
-    today = datetime.now()
-    is_tomorrow = (day == today.day + 1 and month == today.month and year == today.year)
-
-    if is_tomorrow:
-        df_rows = pd.DataFrame(date_data_rows, columns=[
-            'Date', 'Time', "Weekday", "Temperature", "Condition", "Humidity", "Wind_Speed", "Holiday", "Event",
-            "Rainfall", "Solar_Generation", "low_price", "high_price", "Average_Price_Rs_Per_Sqft",
-            "QoQ_Price_Change_Percent", 'Load', 'BRPL', 'BYPL', 'NDPL', 'NDMC', 'MES'
-        ])
-        df_rows.to_csv(csv_file, index=False, mode='a', header=False)
-        print(f"Appended {len(df_rows)} rows for tomorrow ({date_str}) to All_Data.csv.")
-
+    if full_date.date() == tomorrow_date_obj:
+        tomorrow_csv_rows = date_csv_rows
         for doc in date_documents:
             db.data.update_one(
                 {"Date": doc["Date"], "Time": doc["Time"]},
@@ -392,126 +317,23 @@ for hd in date_links:
                 upsert=True,
             )
 
-driver.quit()
-
-# ---------------------------------------------------------------------------
-# Guaranteed fallback: make sure TOMORROW is always complete
-# ---------------------------------------------------------------------------
-today = datetime.now()
-tomorrow = today + timedelta(days=1)
-tomorrow_date_str = f"{tomorrow.day:02d}-{tomorrow.month:02d}-{tomorrow.year}"
-tomorrow_count = collection.count_documents({"Date": tomorrow_date_str})
-print(f"\nTomorrow ({tomorrow_date_str}) has {tomorrow_count}/24 hours in FutureData after scraping.")
-
-if tomorrow_count < 24:
-    print("Tomorrow is incomplete — falling back to Open-Meteo forecast API to fill it in.")
-    try:
-        om_url = "https://api.open-meteo.com/v1/forecast"
-        om_params = {
-            "latitude": LATITUDE, "longitude": LONGITUDE, "forecast_days": 2,
-            "hourly": "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code",
-            "timezone": "Asia/Kolkata",
-        }
-        resp = requests.get(om_url, params=om_params, timeout=60)
-        resp.raise_for_status()
-        hourly = resp.json()["hourly"]
-
-        om_df = pd.DataFrame({
-            "datetime": pd.to_datetime(hourly["time"]),
-            "Temperature": hourly["temperature_2m"], "Humidity": hourly["relative_humidity_2m"],
-            "Rainfall": hourly["precipitation"], "Wind_Speed": hourly["wind_speed_10m"],
-            "weather_code": hourly["weather_code"],
-        })
-        om_df["Condition"] = om_df["weather_code"].map(WMO_CONDITION_MAP).fillna("Cloudy")
-        om_df = om_df[om_df["datetime"].dt.date == tomorrow.date()]
-
-        fallback_docs = []
-        fallback_csv_rows = []
-
-        for _, row in om_df.iterrows():
-            dt = row["datetime"]
-            day, month, year, hour = dt.day, dt.month, dt.year, dt.hour
-            weekday = dt.weekday()
-            day_of_year = dt.timetuple().tm_yday
-            date_str = f"{day:02d}-{month:02d}-{year}"
-            time_str = f"{hour:02d}-00:{(hour + 1) % 24:02d}:00"
-
-            holiday, event = get_holiday_event(day, month, year, weekday)
-            solar_generation = get_solar_generation(year, month)
-            date_ts = pd.to_datetime(f"{year}-{month}-{day}")
-            real_estate = get_real_estate(year, date_ts)
-            if solar_generation is None or real_estate is None:
-                continue
-            low_price, high_price, avg_price, qoq_price = real_estate
-
-            temp = round(float(row["Temperature"]), 2)
-            humidity = int(round(row["Humidity"]))
-            wind_speed = round(float(row["Wind_Speed"]), 2)
-            rain = round(float(row["Rainfall"]), 2)
-            condition = row["Condition"]
-
-            load = predict_load(weekday, temp, condition, humidity, wind_speed, holiday, event, rain,
-                                 solar_generation, low_price, high_price, avg_price, qoq_price,
-                                 day, month, year, day_of_year, hour)
-
-            doc = create_document({
-                'Date': date_str, 'Time': time_str, 'Weekday': calendar.day_name[weekday],
-                'Temperature': temp, 'Condition': condition, 'Humidity': humidity,
-                'Wind_Speed': wind_speed, 'Holiday': holiday, 'Event': event, 'Load': load,
-            })
-            fallback_docs.append(doc)
-
-            fallback_csv_rows.append({
-                'Date': date_str, 'Time': time_str, "Weekday": calendar.day_name[weekday],
-                "Temperature": temp, "Condition": condition, "Humidity": humidity,
-                "Wind_Speed": wind_speed, "Holiday": holiday, "Event": event, "Rainfall": rain,
-                "Solar_Generation": round(solar_generation, 2), "low_price": round(low_price, 2),
-                "high_price": round(high_price, 2), "Average_Price_Rs_Per_Sqft": round(avg_price, 2),
-                "QoQ_Price_Change_Percent": round(qoq_price, 2), 'Load': load,
-                "BRPL": None, "BYPL": None, "NDPL": None, "NDMC": None, "MES": None,
-            })
-
-        if fallback_docs:
-            upsert_date_documents(tomorrow_date_str, fallback_docs)
-            for doc in fallback_docs:
-                db.data.update_one(
-                    {"Date": doc["Date"], "Time": doc["Time"]},
-                    {"$set": doc},
-                    upsert=True,
-                )
-            print(f"Fallback: filled {len(fallback_docs)} hours for {tomorrow_date_str} via Open-Meteo.")
-
-            if tomorrow_date_str not in successfully_scraped_dates:
-                fallback_df = pd.DataFrame(fallback_csv_rows, columns=[
-                    'Date', 'Time', "Weekday", "Temperature", "Condition", "Humidity", "Wind_Speed", "Holiday", "Event",
-                    "Rainfall", "Solar_Generation", "low_price", "high_price", "Average_Price_Rs_Per_Sqft",
-                    "QoQ_Price_Change_Percent", 'Load', 'BRPL', 'BYPL', 'NDPL', 'NDMC', 'MES'
-                ])
-                fallback_df.to_csv(csv_file, index=False, mode='a', header=False)
-                print(f"Fallback: appended {len(fallback_df)} rows for {tomorrow_date_str} to All_Data.csv.")
-        else:
-            print("Fallback: Open-Meteo returned no usable rows either — tomorrow remains incomplete.")
-    except Exception as e:
-        print(f"Fallback to Open-Meteo failed: {str(e)}")
+if tomorrow_csv_rows:
+    df_rows = pd.DataFrame(tomorrow_csv_rows, columns=CSV_COLUMNS)
+    df_rows.to_csv(csv_file, index=False, mode='a', header=False)
+    print(f"Appended {len(df_rows)} rows for tomorrow to All_Data.csv.")
 else:
-    print("Tomorrow is already complete from scraping — no fallback needed.")
+    print("WARNING: No rows built for tomorrow — CSV not updated this run.")
 
 # ---------------------------------------------------------------------------
 # Regenerate data.json from the (now updated) All_Data.csv
 # ---------------------------------------------------------------------------
-COLUMNS = [
-    "Date", "Time", "Weekday", "Temperature", "Condition", "Humidity",
-    "Wind_Speed", "Holiday", "Event", "Rainfall", "Solar_Generation",
-    "low_price", "high_price", "Average_Price_Rs_Per_Sqft",
-    "QoQ_Price_Change_Percent", "Load", "BRPL", "BYPL", "NDPL", "NDMC", "MES"
-]
 DROP_COLUMNS = {
     "Rainfall", "Solar_Generation", "low_price", "high_price",
     "Average_Price_Rs_Per_Sqft", "QoQ_Price_Change_Percent",
     "BRPL", "BYPL", "NDPL", "NDMC", "MES"
 }
 
-df_all = pd.read_csv(csv_file, header=None, names=COLUMNS, encoding="ISO-8859-1", low_memory=False)
+df_all = pd.read_csv(csv_file, header=None, names=CSV_COLUMNS, encoding="ISO-8859-1", low_memory=False)
 df_all = df_all[df_all["Date"] != "Date"].reset_index(drop=True)
 
 
@@ -533,4 +355,5 @@ with open(json_file, mode="w", encoding="utf-8") as file:
     json.dump(json_rows, file, indent=4)
 
 print(f"\nRegenerated data.json: {len(json_rows)} rows.")
+print(f"Processed dates: {sorted(successfully_processed_dates)}")
 print("Daily run complete.")
